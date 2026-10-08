@@ -144,8 +144,9 @@ test('attachments are served only from the floor’s attachments/ folder', (t) =
   assert.ok('body' in ok && ok.type === 'image/png' && ok.name === '2026-09-29_120000-ab12.png');
   const rel = readAttachment(dir, 'attachments/2026-09/statement.pdf');
   assert.ok('body' in rel && rel.type === 'application/pdf');
-  assert.ok('body' in readAttachment(dir, 'attachments\\2026-09\\statement.pdf'));
   if (WIN) {
+    // A backslash is a folder separator only on Windows (elsewhere it's part of a file's name).
+    assert.ok('body' in readAttachment(dir, 'attachments\\2026-09\\statement.pdf'));
     // Windows paths are any case, with either slash.
     assert.ok('body' in readAttachment(dir, png.toUpperCase().replace(/\.PNG$/, '.png')));
     assert.ok('body' in readAttachment(dir, png.replace(/\\/g, '/')));

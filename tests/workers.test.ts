@@ -7,6 +7,7 @@ import path from 'node:path';
 import { Ledger } from '../src/server/usage.js';
 import { WorkerManager, type WorkerEvents } from '../src/server/workers.js';
 import type { AgentProvider, WorkerInfo } from '../src/shared/protocol.js';
+import { CLAUDE_MODEL_IDS } from '../src/shared/protocol.js';
 
 type Invocation = {
   kind: string;
@@ -445,7 +446,7 @@ test('an explicit Claude model/effort overrides --agent-args and persists across
   const first = await waitFor(() => f.read(), (records) => records.some((r) => r.kind === 'claude'));
   const firstInvocation = first.find((r) => r.kind === 'claude')!;
   // The per-worker choice is appended after --agent-args, so it wins even though "opus" also appears.
-  assert.deepEqual(firstInvocation.args.slice(firstInvocation.args.indexOf('--model')), ['--model', 'opus', '--model', 'haiku', '--effort', 'high', '--', 'haiku task']);
+  assert.deepEqual(firstInvocation.args.slice(firstInvocation.args.indexOf('--model')), ['--model', 'opus', '--model', CLAUDE_MODEL_IDS.haiku, '--effort', 'high', '--', 'haiku task']);
 
   assert.equal(workers.handleHook(worker.id, firstInvocation.env.hookToken!, 'SessionStart', { session_id: 'claude-model-1' }), true);
   await waitFor(() => workers.get(worker.id)?.status, (status) => status === 'exited');
@@ -453,7 +454,7 @@ test('an explicit Claude model/effort overrides --agent-args and persists across
   const resumed = await waitFor(() => f.read(), (records) => records.filter((r) => r.kind === 'claude').length >= 2);
   const secondInvocation = resumed.filter((r) => r.kind === 'claude')[1];
   assert.ok(secondInvocation.args.includes('--model'));
-  assert.ok(secondInvocation.args.includes('haiku'));
+  assert.ok(secondInvocation.args.includes(CLAUDE_MODEL_IDS.haiku));
   assert.ok(secondInvocation.args.includes('--effort'));
   assert.ok(secondInvocation.args.includes('high'));
   assert.ok(secondInvocation.args.includes('--resume'));
@@ -485,7 +486,7 @@ test('a worker hired on Fable launches with --model fable and keeps it across a 
   if (typeof worker === 'string') return;
   const records = await waitFor(() => f.read(), (rs) => rs.some((r) => r.kind === 'claude'));
   const launch = records.find((r) => r.kind === 'claude')!;
-  assert.deepEqual(launch.args.slice(launch.args.indexOf('--model')), ['--model', 'opus', '--model', 'fable', '--', 'fable task']);
+  assert.deepEqual(launch.args.slice(launch.args.indexOf('--model')), ['--model', 'opus', '--model', CLAUDE_MODEL_IDS.fable, '--', 'fable task']);
 
   workers.shutdown();
   const restored = manager(f, f.claude, [], ['--model', 'opus']);
