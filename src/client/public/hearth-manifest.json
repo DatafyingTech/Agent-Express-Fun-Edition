@@ -1,0 +1,16 @@
+{
+  "name": "Hearth",
+  "short_name": "Hearth",
+  "description": "Your home team: chat with them, see what they know, and let them handle the rest.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0C",
+  "theme_color": "#0A0A0C",
+  "icons": [
+    { "src": "/hearth-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/hearth-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/hearth-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/hearth-icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

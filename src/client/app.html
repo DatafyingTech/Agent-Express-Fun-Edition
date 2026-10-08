@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="theme-color" content="#F4F2EE" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0A0A0C" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Hearth" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="description" content="Hearth: talk with your household helpers." />
+    <title>Hearth</title>
+    <link rel="icon" href="/hearth-icon.svg" />
+    <link rel="manifest" href="/hearth-manifest.json" crossorigin="use-credentials" />
+    <link rel="apple-touch-icon" href="/hearth-apple-touch.png" />
+    <meta name="apple-mobile-web-app-title" content="Hearth" />
+    <script>
+      // The theme before anything paints, so a dark phone never flashes oat paper.
+      (function () {
+        var t = 'auto';
+        try {
+          t = localStorage.getItem('hearth.theme') || 'auto';
+        } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = 'auto';
+        document.documentElement.setAttribute('data-theme', t);
+        if (t !== 'auto') {
+          var metas = document.querySelectorAll('meta[name="theme-color"]');
+          for (var i = 0; i < metas.length; i++) metas[i].parentNode.removeChild(metas[i]);
+          var m = document.createElement('meta');
+          m.name = 'theme-color';
+          m.content = t === 'dark' ? '#0A0A0C' : '#F4F2EE';
+          document.head.appendChild(m);
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap" />
+    <link rel="stylesheet" href="./app/tokens.css" />
+    <link rel="stylesheet" href="./app/app.css" />
+    <link rel="stylesheet" href="./app/components.css" />
+    <link rel="stylesheet" href="./app/views.css" />
+    <link rel="stylesheet" href="./app/css/meetings.css" />
+    <link rel="stylesheet" href="./app/css/teammate.css" />
+    <link rel="stylesheet" href="./app/css/space.css" />
+    <link rel="stylesheet" href="./app/css/office.css" />
+    <link rel="stylesheet" href="./app/css/settings.css" />
+  </head>
+  <body class="app">
+    <a class="a-skip" href="#a-main">Skip to content</a>
+    <div id="a-shell" class="a-shell">
+      <!-- Built by app/main.ts: sidebar or rail, the screen, the tab bar. -->
+      <main id="a-main" class="a-main" tabindex="-1">
+        <div class="a-boot" aria-busy="true" aria-label="Loading">
+          <span class="a-wordmark">Hearth<span class="a-wordmark__dot" aria-hidden="true"></span></span>
+        </div>
+      </main>
+    </div>
+    <!-- The office's own windows ("Behind the scenes") mount here. -->
+    <div id="modal-root"></div>
+    <div id="toasts" aria-hidden="true"></div>
+    <script type="module" src="./app/main.ts"></script>
+  </body>
+</html>

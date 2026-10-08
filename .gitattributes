@@ -1,0 +1,15 @@
+# Line endings: LF for scripts and sources everywhere (a CRLF shell script fails on macOS and
+# Linux), CRLF for the Windows batch files (cmd.exe misreads some LF-only ones).
+* text=auto
+*.sh text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.png binary
+*.gif binary
+*.jpg binary
+*.woff2 binary

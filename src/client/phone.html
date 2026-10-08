@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#2b2d42" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>My Team · %EDITION_NAME%</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./phone.css" />
+  </head>
+  <body class="phone">
+    <header class="ph-top">
+      <div class="ph-title">
+        <span class="ph-logo">🏢</span>
+        <select id="ph-floor" aria-label="Floor"></select>
+      </div>
+      <div class="ph-status" id="ph-status">Connecting…</div>
+    </header>
+    <nav class="ph-actions">
+      <button class="btn" id="ph-crew" type="button">👥 Hire a crew</button>
+      <button class="btn" id="ph-filter" type="button" aria-pressed="false">🙋 Needs me</button>
+      <button class="btn" id="ph-reports" type="button">📊 Reports</button>
+      <a class="btn" id="ph-3d" href="/">🎮 Switch to 3D office</a>
+    </nav>
+    <main id="ph-list" class="ph-list" aria-live="polite"></main>
+    <div id="toasts"></div>
+    <div id="modal-root"></div>
+    <script type="module" src="./phone.ts"></script>
+  </body>
+</html>

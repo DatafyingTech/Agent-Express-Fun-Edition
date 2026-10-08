@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Hearth, "Evening Glass": a hairline house on obsidian, an ember burning in it, its glow on the walls. -->
+  <defs>
+    <radialGradient id="ground" cx="28%" cy="14%" r="95%">
+      <stop offset="0" stop-color="#3B1B0D"/>
+      <stop offset="0.5" stop-color="#151417"/>
+      <stop offset="1" stop-color="#0A0A0C"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#FF7A3D" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FF7A3D" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFC08F"/>
+      <stop offset="0.55" stop-color="#F0703A"/>
+      <stop offset="1" stop-color="#C24E1C"/>
+    </linearGradient>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F4F2EE"/>
+      <stop offset="1" stop-color="#F4F2EE" stop-opacity="0.72"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#ground)"/>
+  <circle cx="256" cy="318" r="170" fill="url(#glow)"/>
+  <path d="M140 240 256 142l116 98v126a26 26 0 0 1-26 26H166a26 26 0 0 1-26-26Z" fill="none" stroke="url(#wall)" stroke-width="24" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M256 222c30 32 54 60 54 98a54 54 0 0 1-108 0c0-22 9-38 21-52 2 18 11 30 23 32-9-29 0-56 10-78Z" fill="url(#flame)"/>
+</svg>

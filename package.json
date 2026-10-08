@@ -1,0 +1,82 @@
+{
+  "name": "hearth-hq",
+  "version": "1.0.0",
+  "description": "Your team of Claude Code agents in a 3D office: walk around, sit them at desks and hold meetings at the table. Includes the Hearth app for your phone, over Tailscale.",
+  "keywords": [
+    "claude-code",
+    "agents",
+    "ai-agents",
+    "3d",
+    "threejs",
+    "game",
+    "office",
+    "tailscale",
+    "self-hosted"
+  ],
+  "homepage": "https://github.com/DatafyingTech/Hearth-HQ#readme",
+  "bugs": {
+    "url": "https://github.com/DatafyingTech/Hearth-HQ/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DatafyingTech/Hearth-HQ.git"
+  },
+  "license": "MIT",
+  "author": "Datafying Tech",
+  "type": "module",
+  "bin": {
+    "hearth-hq": "bin/hearth-hq.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "scripts/roster.mjs"
+  ],
+  "scripts": {
+    "pretest": "node scripts/roster.mjs",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "predev": "node scripts/roster.mjs",
+    "dev": "concurrently -k \"vite\" \"tsx watch src/server/cli.ts --port 4600 --password dev\"",
+    "prebuild": "node scripts/roster.mjs",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "pretypecheck": "node scripts/roster.mjs",
+    "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "start": "node bin/hearth-hq.js",
+    "prepare": "npm run build",
+    "roster": "node scripts/roster.mjs",
+    "postinstall": "node scripts/roster.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@lydell/node-pty": "^1.2.0-beta.15",
+    "@xterm/addon-serialize": "^0.14.0",
+    "@xterm/headless": "^6.0.0",
+    "selfsigned": "^5.5.0",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@excalidraw/excalidraw": "^0.18.1",
+    "@types/node": "^26.6.3",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@types/three": "^0.186.0",
+    "@types/ws": "^8.18.1",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-web-links": "^0.12.0",
+    "@xterm/xterm": "^6.0.0",
+    "concurrently": "^10.0.5",
+    "dompurify": "^3.4.16",
+    "marked": "^18.0.14",
+    "playwright-core": "^1.63.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.186.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}

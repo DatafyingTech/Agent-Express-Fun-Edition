@@ -1,0 +1,16 @@
+node_modules
+dist
+.agent-office
+*.log
+.DS_Store
+pw.txt
+# The roster the office runs on: written by scripts/roster.mjs, and your own team kept private.
+src/shared/roster.ts
+src/shared/roster.local.ts
+logs/
+# The release export's trees (release/export.mjs).
+release/out/
+release/verify/
+# Each install keeps its settings, logs and state here (installer/hearth.mjs).
+.hearth/
+.upgrade/

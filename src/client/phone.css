@@ -1,0 +1,39 @@
+/* The phone page (phone.ts): the team as cards, thumb-sized. Modals and pills come from style.css. */
+body.phone {
+  margin: 0;
+  min-height: 100vh;
+  overflow: auto;
+  background: var(--paper, #fff8ef);
+  color: var(--ink, #2b2d42);
+  font-family: inherit;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.ph-top { position: sticky; top: 0; z-index: 5; display: flex; flex-direction: column; gap: 4px; padding: 10px 12px 8px; background: var(--ink, #2b2d42); color: #fff; }
+.ph-title { display: flex; align-items: center; gap: 8px; }
+.ph-logo { font-size: 22px; }
+.ph-title select { flex: 1; min-width: 0; padding: 8px 10px; border: 2px solid #fff; border-radius: 10px; background: #fff; color: var(--ink, #2b2d42); font: inherit; font-size: 16px; font-weight: 800; }
+.ph-status { font-size: 12px; font-weight: 700; opacity: .8; min-height: 1em; }
+.ph-status.bad { color: #ffb3b3; opacity: 1; }
+.ph-actions { display: flex; gap: 8px; padding: 10px 12px; overflow-x: auto; }
+.ph-actions .btn { flex: none; font-size: 14px; padding: 8px 12px; text-decoration: none; }
+.ph-actions .btn.on { background: var(--accent, #ff8a5b); color: #fff; }
+.ph-list { display: flex; flex-direction: column; gap: 10px; padding: 0 12px 24px; }
+.ph-empty { text-align: center; font-weight: 700; color: var(--muted, #6c757d); margin-top: 40px; }
+.ph-card { background: #fff; border: 3px solid var(--ink, #2b2d42); border-left: 8px solid var(--who, var(--ink)); border-radius: 14px; padding: 10px 12px; box-shadow: 0 3px 0 var(--ink, #2b2d42); }
+.ph-card.st-asleep { opacity: .82; }
+.ph-card.waiting { border-color: #e63946; box-shadow: 0 3px 0 #e63946; }
+.ph-head { display: flex; align-items: center; gap: 10px; }
+.ph-emoji { font-size: 26px; flex: none; }
+.ph-name { flex: 1; min-width: 0; }
+.ph-name b { display: block; font-size: 16px; }
+.ph-name small { display: block; font-size: 12px; font-weight: 700; color: var(--muted, #6c757d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ph-doing { margin: 8px 0 0; font-size: 13px; font-weight: 600; line-height: 1.35; color: var(--ink, #2b2d42); overflow-wrap: anywhere; }
+.ph-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ph-buttons .btn { font-size: 13px; padding: 7px 10px; }
+.ph-box { margin-top: 10px; }
+.ph-box textarea { width: 100%; box-sizing: border-box; font-size: 16px; }
+.ph-box-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; }
+.ph-box-row small { color: var(--muted, #6c757d); font-weight: 700; }
+/* Modals full-width on a phone. */
+body.phone .modal { width: 100%; max-height: calc(100vh - 16px); }
+body.phone .backdrop { padding: 8px; }

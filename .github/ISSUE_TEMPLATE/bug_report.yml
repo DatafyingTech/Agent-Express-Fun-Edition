@@ -1,0 +1,100 @@
+name: Bug report
+description: Something does not work (install, sign-in, phone, a teammate, a meeting, the 3D office)
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The single most useful thing you can paste is the output of
+        `doctor.bat` (Windows) or `./doctor.sh` (macOS, Linux). It checks every part of the stack
+        and says which one is unhappy.
+
+        Everything here runs on your own computer, so nothing has been sent to us. That also means
+        what you paste may contain private things:
+
+        - The doctor output prints your workspace folder and your computer's Tailscale name.
+        - `.hearth/logs/hearth.log` can contain file names and bits of what your teammates printed.
+        - Screenshots show your chats, your teammates' work and your notes.
+
+        **Only paste what matters, and check it before you post.** Never paste your password.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+      placeholder: |
+        I started a conversation with three teammates from my phone. Two answered, the third stayed
+        on "Thinking..." for ten minutes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of doctor
+      description: |
+        Windows: double-click `doctor.bat` in the app's folder and copy what it prints.
+        macOS / Linux: `./doctor.sh` in the app's folder.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Relevant lines from `.hearth/logs/hearth.log`
+      description: The last 30-40 lines, or the lines around the failure. Redact anything private.
+      render: text
+    validations:
+      required: false
+
+  - type: dropdown
+    id: edition
+    attributes:
+      label: Which app?
+      options:
+        - Hearth
+        - Hearth HQ (the 3D office)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did you see it?
+      multiple: true
+      options:
+        - Installing or updating
+        - On the computer, in the browser
+        - On an iPhone
+        - On an Android phone
+        - In the 3D office
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: OS of the computer running it
+      placeholder: "Windows 11 24H2 / macOS 15.4 / Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: input
+    id: claude
+    attributes:
+      label: Claude Code version
+      description: "`claude --version`"
+      placeholder: "2.1.0 (Claude Code)"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: "The commit you are on (`git log -1 --oneline` in the app's folder), or when you installed it."
+    validations:
+      required: false

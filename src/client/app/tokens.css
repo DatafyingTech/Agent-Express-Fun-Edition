@@ -1,0 +1,629 @@
+/*
+ * Hearth design tokens (the /app front end). Look: "Evening Glass" (docs/app/REDESIGN.md §1).
+ * Structure and wording: docs/app/DESIGN.md.
+ *
+ * - Every custom property is prefixed --a- so nothing collides with the 3D office's style.css.
+ * - Theme lives on <html data-theme="light|dark|auto">. Missing or "auto" follows the OS.
+ * - Component CSS must use these tokens, never raw hex. If a value isn't a token, color-mix() over tokens.
+ * - Old names (--a-clay*, --a-lake*, --a-moss*, --a-stone*) keep working: clay is the ember accent,
+ *   lake is the aqua "working" hue, moss is sage "done", stone is graphite "resting".
+ * - The shell sets --a-space on <html> to the current space's color, so the aura (and anything that
+ *   tints by the space without setting its own) follows the space on screen.
+ * - The base layer at the bottom only touches <body class="app"> and what is inside it.
+ *
+ * Fonts are loaded by the page (app.html):
+ *   <link rel="preconnect" href="https://fonts.googleapis.com">
+ *   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ *   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&family=Instrument+Serif:ital@0;1&display=swap">
+ */
+
+/* The aura's colors are registered so a change of space fades the glow instead of snapping it. */
+@property --a-aura-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --a-aura-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* ============================================================================================
+ * 1. Theme-independent tokens + LIGHT colors (the default)
+ * ========================================================================================== */
+:root {
+  /* ---- Type families ------------------------------------------------------------------ */
+  /* Display: Instrument Serif (one weight, 400, with a true italic for a word of emphasis). */
+  --a-font-display: 'Instrument Serif', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --a-font-ui: 'Geist', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --a-font-mono: 'Geist Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+  /* Instrument Serif has no variation axes; kept so older rules that use it stay valid. */
+  --a-display-variation: normal;
+
+  /* ---- Type scale (rem so browser text size is respected) ------------------------------ */
+  /* Instrument Serif is a tall, narrow face: display sizes run larger than a round serif's. */
+  --a-text-display: 2.75rem;    /* 44px  Instrument Serif -- Home greeting                 */
+  --a-lh-display: 2.875rem;     /* 46px                                                    */
+  --a-text-title-1: 2.125rem;   /* 34px  Instrument Serif -- screen titles (large titles)  */
+  --a-lh-title-1: 2.375rem;     /* 38px                                                    */
+  --a-text-title-2: 1.625rem;   /* 26px  Instrument Serif -- sheet titles, empty states    */
+  --a-lh-title-2: 1.875rem;     /* 30px                                                    */
+  --a-text-title-3: 1.0625rem;  /* 17px  Geist 600  -- section headers, row titles         */
+  --a-lh-title-3: 1.5rem;       /* 24px                                                    */
+  --a-text-body: 1rem;          /* 16px  Geist 400  -- default; inputs NEVER below this    */
+  --a-lh-body: 1.5rem;          /* 24px                                                    */
+  --a-text-reading: 1.0625rem;  /* 17px  Geist 400  -- long markdown (memory, reports)     */
+  --a-lh-reading: 1.7rem;       /* ~27px                                                   */
+  --a-text-callout: 0.9375rem;  /* 15px  Geist 400/500 -- row subtitles, chat meta         */
+  --a-lh-callout: 1.375rem;     /* 22px                                                    */
+  --a-text-small: 0.875rem;     /* 14px  Geist 500  -- buttons (sm), chips                 */
+  --a-lh-small: 1.25rem;        /* 20px                                                    */
+  --a-text-caption: 0.8125rem;  /* 13px  Geist 500  -- timestamps, badges, labels          */
+  --a-lh-caption: 1.125rem;     /* 18px                                                    */
+  --a-text-overline: 0.71875rem;/* 11.5px Geist 600, +0.08em, uppercase -- sparingly       */
+  --a-lh-overline: 1rem;
+
+  --a-weight-regular: 400;
+  --a-weight-medium: 500;
+  --a-weight-semibold: 600;
+  --a-weight-bold: 700;
+  --a-tracking-display: -0.012em;
+  --a-tracking-tight: -0.011em;
+  --a-tracking-overline: 0.08em;
+
+  /* ---- Spacing (4px base; use only these) ----------------------------------------------- */
+  --a-s-0: 0;
+  --a-s-half: 0.125rem; /* 2  */
+  --a-s-1: 0.25rem;     /* 4  */
+  --a-s-2: 0.5rem;      /* 8  */
+  --a-s-3: 0.75rem;     /* 12 */
+  --a-s-4: 1rem;        /* 16 */
+  --a-s-5: 1.25rem;     /* 20 */
+  --a-s-6: 1.5rem;      /* 24 */
+  --a-s-8: 2rem;        /* 32 */
+  --a-s-10: 2.5rem;     /* 40 */
+  --a-s-12: 3rem;       /* 48 */
+  --a-s-16: 4rem;       /* 64 */
+  --a-s-20: 5rem;       /* 80 */
+
+  /* ---- Layout ----------------------------------------------------------------------------- */
+  --a-gutter: 1.25rem;            /* 20px page side padding on phones; 32px at >=1024 (below) */
+  --a-touch: 44px;                /* minimum hit area, every control, every screen size       */
+  --a-header-h: 52px;             /* top bar (without safe-area inset)                        */
+  /* The floating glass tab bar: its own height, plus the gap it floats above the bottom edge. The
+     space a screen must leave under its content is tabbar-h + 12px + safe-area-bottom. */
+  --a-tabbar-h: 64px;
+  --a-sidebar-w: 264px;           /* desktop sidebar                                          */
+  --a-rail-w: 80px;               /* tablet icon rail                                         */
+  --a-read-w: 42.5rem;            /* 680px: chat column, memory, settings                     */
+  --a-content-w: 65rem;           /* 1040px: grids (spaces, teammates, reports)               */
+  --a-bubble-max: 36rem;          /* 576px cap for a chat bubble on wide screens              */
+  --a-safe-top: env(safe-area-inset-top, 0px);
+  --a-safe-right: env(safe-area-inset-right, 0px);
+  --a-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --a-safe-left: env(safe-area-inset-left, 0px);
+  --a-kb: 0px;                    /* on-screen keyboard height; JS sets it from visualViewport */
+
+  /* ---- Radius (continuous, iOS-like; nested = outer - padding) ----------------------------- */
+  --a-r-xs: 8px;      /* status chips, code, checkbox                  */
+  --a-r-sm: 12px;     /* small buttons, inputs, attachment thumbnails  */
+  --a-r-md: 16px;     /* buttons, list groups, segmented control       */
+  --a-r-lg: 22px;     /* cards, chat bubbles, dialogs                  */
+  --a-r-xl: 30px;     /* bottom-sheet top corners, composer field      */
+  --a-r-pill: 999px;  /* badges, avatars, pills, send button           */
+  --a-r-bubble-tail: 6px; /* the corner of a bubble that points at its sender */
+
+  /* ---- Motion ------------------------------------------------------------------------------ */
+  --a-dur-instant: 90ms;   /* press feedback                                  */
+  --a-dur-fast: 150ms;     /* hover, color, small fades, exits                */
+  --a-dur-base: 240ms;     /* list items in, chips, toasts, popovers          */
+  --a-dur-slow: 340ms;     /* screen push, dialogs (cubic fallback)           */
+  --a-dur-sheet: 420ms;    /* bottom sheet rise (exits use --a-dur-base)      */
+  --a-dur-spring: 520ms;   /* how long a spring (--a-ease-spring) runs        */
+  --a-dur-breathe: 3200ms; /* 'working' status ring: one full turn + breath   */
+  --a-dur-shimmer: 1600ms; /* skeleton sweep                                  */
+  --a-ease-out: cubic-bezier(0.22, 1, 0.36, 1);      /* default for anything arriving/reacting */
+  --a-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);   /* things moving across the screen      */
+  --a-ease-in: cubic-bezier(0.55, 0, 1, 0.45);       /* exits only, and only short           */
+  --a-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);    /* iOS-like sheet / drawer              */
+  /* A real spring (a touch of overshoot, settles by the end) where linear() is supported; the
+     @supports block below swaps it in. This default keeps every rule that uses it valid. */
+  --a-ease-spring: cubic-bezier(0.34, 1.2, 0.64, 1);
+  --a-stagger: 45ms;       /* between list items entering (cap at 6 items)    */
+  --a-rise: 10px;          /* how far things rise when they enter             */
+  --a-push: 32px;          /* how far a pushed screen slides                  */
+  --a-press-scale: 0.97;   /* :active scale for buttons and cards (never below 0.95) */
+
+  /* ---- Layers -------------------------------------------------------------------------------- */
+  --a-z-sticky: 10;
+  --a-z-header: 20;
+  --a-z-tabbar: 30;
+  --a-z-sheet: 50;
+  --a-z-toast: 60;
+
+  /* ---- Tint helpers (for per-space and per-teammate colors) ----------------------------------
+   * Set style="--a-who: <worker.color>" or "--a-space: <floor trim>" on an element, then:
+   *   background: color-mix(in srgb, var(--a-who) var(--a-tint), var(--a-surface));
+   */
+  --a-tint: 16%;
+  --a-tint-strong: 28%;
+
+  /* ==== LIGHT COLORS: warm porcelain, near-black ink ========================================== */
+  color-scheme: light;
+
+  /* Grounds */
+  --a-bg: #F4F2EE;             /* porcelain: page background                          */
+  --a-bg-sunk: #EBE8E2;        /* inset areas: sidebar, segmented track, input wells  */
+  --a-surface: #FFFFFF;        /* cards, sheets, theirs-bubble                        */
+  --a-surface-raised: #FFFFFF; /* popovers, menus (plus --a-shadow-3)                 */
+  --a-surface-hover: #FAF9F6;  /* row/card hover                                      */
+  --a-surface-press: #F0EDE8;  /* row/card pressed, selected row                      */
+  --a-line: #E5E1DA;           /* hairlines, card borders, dividers                   */
+  --a-line-strong: #D3CDC4;    /* input borders, secondary button borders             */
+
+  /* Ink (text). 1 = 16.5:1, 2 = 6.8:1, 3 = 5.2:1 on --a-bg (4.7:1 on --a-bg-sunk). */
+  --a-ink: #16140F;
+  --a-ink-2: #57534C;          /* secondary text, icons                               */
+  --a-ink-3: #6A655D;          /* tertiary: timestamps, placeholders, meta            */
+  --a-ink-4: #A8A299;          /* disabled + decorative only (never for info)         */
+
+  /* Ember: the one accent. It means "your move": primary buttons, her bubbles, "Needs you". */
+  --a-accent: #B4441A;         /* fills; white on it = 5.6:1; on --a-bg = 5.0:1       */
+  --a-accent-ink: #9C3A14;     /* ember TEXT/links: 6.2:1 on bg, 6.9:1 on white       */
+  --a-accent-soft: #FBE9DF;    /* tinted background for needs-you rows/chips          */
+  --a-on-accent: #FFFFFF;      /* text/icons on an ember fill                         */
+  --a-clay: var(--a-accent);
+  --a-clay-hover: #A23C16;
+  --a-clay-press: #933612;     /* white on it = 7.5:1                                 */
+  --a-clay-text: var(--a-accent-ink);
+  --a-clay-soft: var(--a-accent-soft);
+  --a-clay-on-soft: #8A3212;   /* text on accent-soft = 7.0:1                         */
+  --a-on-clay: var(--a-on-accent);
+
+  /* Status: working (aqua), done (sage), resting (graphite), heads-up (honey), danger. */
+  --a-lake: #0F7A80;           /* aqua; 5.1:1 on white                                */
+  --a-lake-soft: #DDF3F1;
+  --a-lake-on-soft: #0D6B70;   /* 5.4:1                                               */
+  --a-moss: #4A7A56;           /* sage; 5.0:1 on white                                */
+  --a-moss-soft: #E4EFE5;
+  --a-moss-on-soft: #3F6B4A;   /* 5.2:1                                               */
+  --a-stone: #77736C;          /* graphite; resting dot/ring, always with a label     */
+  --a-stone-soft: #ECE9E4;
+  --a-stone-on-soft: #57534C;
+  --a-honey: #A86B00;          /* connection / heads-up icon                          */
+  --a-honey-soft: #FBEFD2;
+  --a-honey-on-soft: #7F5200;
+  --a-danger: #C0283F;         /* 5.8:1 with white                                    */
+  --a-danger-hover: #A82236;
+  --a-danger-soft: #FBE4E7;
+  --a-danger-on-soft: #9A1D31;
+  --a-on-danger: #FFFFFF;
+  --a-danger-text: #B72439;    /* danger words on bg/surface                          */
+
+  /* Semantic aliases (components use these, so a remap is one line) */
+  --a-status-working: var(--a-lake);
+  --a-status-working-glow: rgba(18, 168, 170, 0.34); /* the aqua halo of a working ring */
+  --a-status-needs: var(--a-accent);
+  --a-status-done: var(--a-moss);
+  --a-status-resting: var(--a-stone);
+  --a-focus: #B4441A;          /* focus ring: 5.0:1 on bg, 5.6:1 on white             */
+  --a-link: var(--a-accent-ink);
+  --a-scrim: rgba(22, 18, 12, 0.26);
+  --a-toast-bg: #1C1B1F;
+  --a-toast-ink: #F4F2EE;
+  --a-toast-action: #FF9A6C;
+  --a-skeleton: #ECE8E2;
+  --a-skeleton-hi: #F7F5F2;
+  --a-selection: #F6D5C4;
+
+  /* Chat */
+  --a-bubble-me-bg: var(--a-accent);
+  --a-bubble-me-ink: #FFFFFF;
+  --a-bubble-me-link: #FFFFFF;          /* underline links inside her bubble */
+  --a-bubble-them-bg: #FFFFFF;
+  --a-bubble-them-ink: var(--a-ink);
+  --a-bubble-them-line: var(--a-line);
+  --a-code-bg: #F2EFEA;
+
+  /* Elevation: soft, layered, warm (a contact shadow plus a wide ambient one). */
+  --a-shadow-1: 0 1px 2px rgba(22, 18, 12, 0.05), 0 2px 8px -2px rgba(22, 18, 12, 0.06);
+  --a-shadow-2: 0 2px 4px rgba(22, 18, 12, 0.05), 0 14px 32px -10px rgba(22, 18, 12, 0.16);
+  --a-shadow-3: 0 4px 12px rgba(22, 18, 12, 0.06), 0 28px 64px -16px rgba(22, 18, 12, 0.30);
+  --a-shadow-inset: inset 0 1px 2px rgba(22, 18, 12, 0.05);
+  --a-shadow-float: 0 1px 1px rgba(22, 18, 12, 0.04), 0 10px 28px -6px rgba(22, 18, 12, 0.18), 0 24px 60px -20px rgba(22, 18, 12, 0.18);
+  --a-shadow-bar: 0 -1px 0 var(--a-line);                  /* top edge of a docked bar        */
+  --a-blur-bar: saturate(180%) blur(24px);                 /* same as --a-glass-blur          */
+  --a-bar-bg: rgba(246, 244, 240, 0.74);                   /* translucent header / composer   */
+
+  /* Glass: frosted, translucent surfaces (tab bar, scrolled header, sheets, menus). */
+  --a-glass: rgba(252, 251, 249, 0.66);
+  --a-glass-strong: rgba(252, 251, 249, 0.9);
+  --a-glass-line: rgba(22, 18, 12, 0.08);
+  --a-glass-highlight: rgba(255, 255, 255, 0.85);
+  --a-glass-blur: saturate(180%) blur(24px);
+
+  /* The aura behind every screen: the current space's color and the ember, very soft in light. */
+  --a-aura-1: color-mix(in oklab, var(--a-space, #D9784A) 30%, transparent);
+  --a-aura-2: color-mix(in oklab, var(--a-accent) 13%, transparent);
+
+  --a-theme-color: #F4F2EE; /* mirror into <meta name="theme-color"> */
+}
+
+@media (min-width: 1024px) {
+  :root { --a-gutter: 2rem; }
+}
+
+/* A true spring where the browser can draw one. */
+@supports (animation-timing-function: linear(0, 1)) {
+  :root {
+    --a-ease-spring: linear(0, 0.0213, 0.0766, 0.1545, 0.2457, 0.3429, 0.4406, 0.5347, 0.6224, 0.7017, 0.7718, 0.8323, 0.8833, 0.9253, 0.959, 0.9853, 1.0051, 1.0194, 1.0282, 1.0321, 1.0319, 1.0288, 1.024, 1.0185, 1.0131, 1.0085, 1.0049, 1.0024, 1.0009, 1.0002, 1);
+  }
+}
+
+/* ============================================================================================
+ * 2. DARK colors: obsidian. The same block appears twice: once for an explicit choice and once
+ *    for "auto" (or no choice) when the OS is dark. Keep the two copies identical.
+ * ========================================================================================== */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --a-bg: #0A0A0C;
+  --a-bg-sunk: #050506;
+  --a-surface: #141417;
+  --a-surface-raised: #1B1B1F;
+  --a-surface-hover: #18181C;
+  --a-surface-press: #202025;
+  --a-line: #232328;
+  --a-line-strong: #323238;
+  --a-ink: #F4F2EE;            /* 17.7:1 on bg                         */
+  --a-ink-2: #B3AFA8;          /* 9.1:1 on bg                          */
+  --a-ink-3: #8F8B84;          /* 5.8:1 on bg, 5.1:1 on surface-raised */
+  --a-ink-4: #56544F;          /* disabled/decorative only             */
+  --a-accent: #C24E1C;         /* fills; white on it = 4.8:1           */
+  --a-accent-ink: #FF8A57;     /* 8.5:1 on bg, 7.9:1 on surface        */
+  --a-accent-soft: #2A160C;
+  --a-on-accent: #FFFFFF;
+  --a-clay-hover: #CE5824;
+  --a-clay-press: #A94418;
+  --a-clay-on-soft: #FFB08A;   /* 9.7:1 on accent-soft                 */
+  --a-lake: #5FDDD4;           /* aqua, luminous: 12:1 on bg           */
+  --a-lake-soft: #0E2524;
+  --a-lake-on-soft: #7FE8E0;
+  --a-moss: #9CCBA6;
+  --a-moss-soft: #15241A;
+  --a-moss-on-soft: #AFD9B7;
+  --a-stone: #6E6C68;
+  --a-stone-soft: #1E1E22;
+  --a-stone-on-soft: #B3AFA8;
+  --a-honey: #F2C46B;
+  --a-honey-soft: #2A2112;
+  --a-honey-on-soft: #F2C46B;
+  --a-danger: #D23A52;
+  --a-danger-hover: #DE4A61;
+  --a-danger-soft: #2E1419;
+  --a-danger-on-soft: #FF8E9C;
+  --a-on-danger: #FFFFFF;
+  --a-danger-text: #FF7A8A;
+  --a-status-working-glow: rgba(95, 221, 212, 0.55);
+  --a-focus: #FF8A57;
+  --a-scrim: rgba(0, 0, 0, 0.5);
+  --a-toast-bg: #26262B;
+  --a-toast-ink: #F4F2EE;
+  --a-toast-action: #FF8A57;
+  --a-skeleton: #1A1A1E;
+  --a-skeleton-hi: #25252A;
+  --a-selection: #5A2A14;
+  --a-bubble-me-ink: #FFFFFF;
+  --a-bubble-me-link: #FFFFFF;
+  --a-bubble-them-bg: #1B1B1F;
+  --a-bubble-them-line: #26262B;
+  --a-code-bg: #0F0F12;
+  --a-shadow-1: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --a-shadow-2: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 14px 34px -10px rgba(0, 0, 0, 0.75);
+  --a-shadow-3: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 30px 70px -12px rgba(0, 0, 0, 0.85);
+  --a-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --a-shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 18px 44px -10px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.45);
+  --a-bar-bg: rgba(12, 12, 14, 0.68);
+  --a-glass: rgba(26, 26, 30, 0.56);
+  --a-glass-strong: rgba(22, 22, 26, 0.86);
+  --a-glass-line: rgba(255, 255, 255, 0.09);
+  --a-glass-highlight: rgba(255, 255, 255, 0.09);
+  --a-glass-blur: saturate(170%) blur(28px);
+  --a-blur-bar: saturate(170%) blur(28px);
+  --a-aura-1: color-mix(in oklab, var(--a-space, #D9784A) 40%, transparent);
+  --a-aura-2: color-mix(in oklab, var(--a-accent) 30%, transparent);
+  --a-tint: 22%;
+  --a-tint-strong: 34%;
+  --a-theme-color: #0A0A0C;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    color-scheme: dark;
+    --a-bg: #0A0A0C;
+    --a-bg-sunk: #050506;
+    --a-surface: #141417;
+    --a-surface-raised: #1B1B1F;
+    --a-surface-hover: #18181C;
+    --a-surface-press: #202025;
+    --a-line: #232328;
+    --a-line-strong: #323238;
+    --a-ink: #F4F2EE;
+    --a-ink-2: #B3AFA8;
+    --a-ink-3: #8F8B84;
+    --a-ink-4: #56544F;
+    --a-accent: #C24E1C;
+    --a-accent-ink: #FF8A57;
+    --a-accent-soft: #2A160C;
+    --a-on-accent: #FFFFFF;
+    --a-clay-hover: #CE5824;
+    --a-clay-press: #A94418;
+    --a-clay-on-soft: #FFB08A;
+    --a-lake: #5FDDD4;
+    --a-lake-soft: #0E2524;
+    --a-lake-on-soft: #7FE8E0;
+    --a-moss: #9CCBA6;
+    --a-moss-soft: #15241A;
+    --a-moss-on-soft: #AFD9B7;
+    --a-stone: #6E6C68;
+    --a-stone-soft: #1E1E22;
+    --a-stone-on-soft: #B3AFA8;
+    --a-honey: #F2C46B;
+    --a-honey-soft: #2A2112;
+    --a-honey-on-soft: #F2C46B;
+    --a-danger: #D23A52;
+    --a-danger-hover: #DE4A61;
+    --a-danger-soft: #2E1419;
+    --a-danger-on-soft: #FF8E9C;
+    --a-on-danger: #FFFFFF;
+    --a-danger-text: #FF7A8A;
+    --a-status-working-glow: rgba(95, 221, 212, 0.55);
+    --a-focus: #FF8A57;
+    --a-scrim: rgba(0, 0, 0, 0.5);
+    --a-toast-bg: #26262B;
+    --a-toast-ink: #F4F2EE;
+    --a-toast-action: #FF8A57;
+    --a-skeleton: #1A1A1E;
+    --a-skeleton-hi: #25252A;
+    --a-selection: #5A2A14;
+    --a-bubble-me-ink: #FFFFFF;
+    --a-bubble-me-link: #FFFFFF;
+    --a-bubble-them-bg: #1B1B1F;
+    --a-bubble-them-line: #26262B;
+    --a-code-bg: #0F0F12;
+    --a-shadow-1: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.5);
+    --a-shadow-2: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 14px 34px -10px rgba(0, 0, 0, 0.75);
+    --a-shadow-3: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 30px 70px -12px rgba(0, 0, 0, 0.85);
+    --a-shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+    --a-shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 18px 44px -10px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.45);
+    --a-bar-bg: rgba(12, 12, 14, 0.68);
+    --a-glass: rgba(26, 26, 30, 0.56);
+    --a-glass-strong: rgba(22, 22, 26, 0.86);
+    --a-glass-line: rgba(255, 255, 255, 0.09);
+    --a-glass-highlight: rgba(255, 255, 255, 0.09);
+    --a-glass-blur: saturate(170%) blur(28px);
+    --a-blur-bar: saturate(170%) blur(28px);
+    --a-aura-1: color-mix(in oklab, var(--a-space, #D9784A) 40%, transparent);
+    --a-aura-2: color-mix(in oklab, var(--a-accent) 30%, transparent);
+    --a-tint: 22%;
+    --a-tint-strong: 34%;
+    --a-theme-color: #0A0A0C;
+  }
+}
+
+/* No backdrop-filter (older browsers): glass turns nearly opaque so text over it stays legible. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --a-glass: rgba(250, 249, 246, 0.97);
+    --a-glass-strong: #FCFBF9;
+    --a-bar-bg: rgba(246, 244, 240, 0.97);
+  }
+  :root[data-theme="dark"] {
+    --a-glass: rgba(24, 24, 28, 0.97);
+    --a-glass-strong: #16161A;
+    --a-bar-bg: rgba(12, 12, 14, 0.97);
+  }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]):not([data-theme="dark"]) {
+      --a-glass: rgba(24, 24, 28, 0.97);
+      --a-glass-strong: #16161A;
+      --a-bar-bg: rgba(12, 12, 14, 0.97);
+    }
+  }
+}
+
+/* More contrast when the OS asks for it: stronger lines, tertiary ink and glass. */
+@media (prefers-contrast: more) {
+  :root {
+    --a-line: #CFC8BD;
+    --a-line-strong: #A39A8D;
+    --a-ink-3: #57534C;
+    --a-glass: rgba(252, 251, 249, 0.95);
+    --a-glass-line: rgba(22, 18, 12, 0.22);
+  }
+  :root[data-theme="dark"] {
+    --a-line: #3A3A40;
+    --a-line-strong: #52525A;
+    --a-ink-3: #B3AFA8;
+    --a-glass: rgba(22, 22, 26, 0.95);
+    --a-glass-line: rgba(255, 255, 255, 0.22);
+  }
+}
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --a-line: #3A3A40;
+    --a-line-strong: #52525A;
+    --a-ink-3: #B3AFA8;
+    --a-glass: rgba(22, 22, 26, 0.95);
+    --a-glass-line: rgba(255, 255, 255, 0.22);
+  }
+}
+
+/* Reduced motion: nothing travels, nothing loops, no springs. Short fades (--a-dur-fast) are kept. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --a-rise: 0px;
+    --a-push: 0px;
+    --a-press-scale: 1;
+    --a-stagger: 0ms;
+    --a-dur-base: 150ms;
+    --a-dur-slow: 150ms;
+    --a-dur-sheet: 150ms;
+    --a-dur-spring: 150ms;
+    --a-ease-spring: ease-out;
+  }
+}
+
+/* ============================================================================================
+ * 3. Base layer: ONLY inside <body class="app">.
+ * ========================================================================================== */
+body.app {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--a-bg);
+  color: var(--a-ink);
+  font-family: var(--a-font-ui);
+  font-size: var(--a-text-body);
+  line-height: var(--a-lh-body);
+  font-weight: var(--a-weight-regular);
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overflow-wrap: break-word;
+}
+
+body.app *,
+body.app *::before,
+body.app *::after {
+  box-sizing: border-box;
+}
+
+body.app :where(h1, h2, h3, h4, p, figure, blockquote, ul, ol, dl, dd) {
+  margin: 0;
+}
+
+/* Display headings: Instrument Serif has one weight (400); never let the browser fake a bold. */
+body.app :where(h1, h2) {
+  font-family: var(--a-font-display);
+  font-weight: var(--a-weight-regular);
+  font-synthesis: none;
+  letter-spacing: var(--a-tracking-display);
+  text-wrap: balance;
+}
+body.app :where(h1, h2) :where(em, i) {
+  font-style: italic;
+}
+
+body.app :where(h3, h4) {
+  font-family: var(--a-font-ui);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  text-wrap: balance;
+}
+
+body.app :where(p, li) {
+  text-wrap: pretty;
+}
+
+body.app :where(code, kbd, samp, pre) {
+  font-family: var(--a-font-mono);
+}
+
+body.app :where(button, input, textarea, select) {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+/* iOS zooms into any field under 16px. Never go below it. */
+body.app :where(input, textarea, select) {
+  font-size: max(16px, 1rem);
+}
+
+body.app :where(button) {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+body.app :where(button:disabled, [aria-disabled="true"]) {
+  cursor: default;
+}
+
+body.app :where(img, svg, video, canvas) {
+  display: block;
+  max-width: 100%;
+}
+
+body.app :where(svg) {
+  flex: none;
+}
+
+body.app :where(a) {
+  color: var(--a-link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+body.app [hidden] {
+  display: none !important;
+}
+
+body.app ::selection {
+  background: var(--a-selection);
+}
+
+/* Focus: a clear 2px ember ring with a 2px gap, only for keyboard users. */
+body.app :focus {
+  outline: none;
+}
+
+body.app :focus-visible {
+  outline: 2px solid var(--a-focus);
+  outline-offset: 2px;
+}
+
+/* Sticky header / floating tab bar / composer must never hide the focused element (WCAG 2.4.11). */
+html:has(body.app) {
+  scroll-padding-top: calc(var(--a-header-h) + var(--a-safe-top) + var(--a-s-2));
+  scroll-padding-bottom: calc(var(--a-tabbar-h) + 12px + var(--a-safe-bottom) + var(--a-s-2));
+  background: var(--a-bg);
+}
+
+/* Money, counts, times: digits that do not jiggle. Geist has tabular figures. */
+body.app .a-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Screen-reader-only text. */
+body.app .a-sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Safety net: no looping or long animation when the OS asks for less motion. Components should
+ * also wrap loops (breathing ring, skeleton shimmer, typing dots, the aura) in
+ * @media (prefers-reduced-motion: no-preference). */
+@media (prefers-reduced-motion: reduce) {
+  body.app *,
+  body.app *::before,
+  body.app *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

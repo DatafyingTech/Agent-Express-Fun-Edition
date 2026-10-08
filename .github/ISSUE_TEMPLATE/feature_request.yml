@@ -1,0 +1,64 @@
+name: Feature request
+description: Suggest a new capability or an improvement
+title: "[feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hearth deliberately runs on your own computer and sends nothing anywhere except what
+        Claude Code itself sends to Anthropic. Requests that keep it that way (no cloud services of
+        ours, no telemetry, no heavyweight new dependencies) are the easiest to say yes to.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the situation, not the solution.
+      placeholder: "When a teammate needs me while I'm out, I only find out when I open the app, so ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything you already tried?
+      description: Settings, a custom roster, workarounds, other tools.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part does this touch?
+      options:
+        - Teammates, crews and the roster
+        - Chat and attachments
+        - Conversations and meetings
+        - Notes, reports and the shared memory
+        - Tasks, GitHub, changes and pull requests
+        - The phone (layout, Home Screen app, Tailscale)
+        - Accounts and inviting people
+        - The 3D office (Hearth HQ)
+        - Install, update, doctor
+        - Documentation
+        - Something else
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: This keeps everything on my own computer (no new cloud service, no telemetry).
+          required: true
+        - label: I would be willing to help test it.
+          required: false

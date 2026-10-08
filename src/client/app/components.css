@@ -1,0 +1,1765 @@
+/*
+ * Hearth components, "Evening Glass" (docs/app/REDESIGN.md §1; structure: docs/app/DESIGN.md §7).
+ * Every screen is built from these; screen CSS only arranges them. Tokens only (tokens.css): a value
+ * that isn't a token is a color-mix() over tokens. Class names are DESIGN.md's, plus a few new ones
+ * (.a-glass, .a-pills, .a-action, .a-meter) that ui.ts builds.
+ * States: is-* classes or ARIA attributes, so what a screen reader hears and what you see can't drift.
+ *
+ * Motion vocabulary: presses scale to --a-press-scale in --a-dur-instant and spring back with
+ * --a-ease-spring; things that arrive rise --a-rise with --a-ease-out; sheets and pills use the spring.
+ */
+
+/* =============================================================================================
+ * Shared text helpers
+ * =========================================================================================== */
+body.app .a-overline {
+  font-family: var(--a-font-ui);
+  font-size: var(--a-text-overline);
+  line-height: var(--a-lh-overline);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-overline);
+  text-transform: uppercase;
+  color: var(--a-ink-3);
+}
+
+body.app .a-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--a-s-3);
+  font-family: var(--a-font-ui);
+  font-size: var(--a-text-title-3);
+  line-height: var(--a-lh-title-3);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  margin: 0 0 var(--a-s-3);
+}
+body.app .a-section-title__count {
+  color: var(--a-ink-3);
+  font-weight: var(--a-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+body.app .a-title-1 {
+  font-family: var(--a-font-display);
+  font-size: var(--a-text-title-1);
+  line-height: var(--a-lh-title-1);
+  font-weight: var(--a-weight-regular);
+  letter-spacing: var(--a-tracking-display);
+}
+body.app .a-title-2 {
+  font-family: var(--a-font-display);
+  font-size: var(--a-text-title-2);
+  line-height: var(--a-lh-title-2);
+  font-weight: var(--a-weight-regular);
+  letter-spacing: var(--a-tracking-display);
+}
+body.app .a-callout {
+  font-size: var(--a-text-callout);
+  line-height: var(--a-lh-callout);
+  color: var(--a-ink-2);
+}
+body.app .a-caption {
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-medium);
+  color: var(--a-ink-3);
+}
+body.app .a-mono { font-family: var(--a-font-mono); font-size: 0.9em; }
+
+body.app .a-icon { display: block; }
+
+/* =============================================================================================
+ * Glass: the frosted material (tab bar, scrolled header, sheets, menus, glass cards).
+ * =========================================================================================== */
+body.app .a-glass {
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight), var(--a-shadow-2);
+}
+body.app .a-glass--strong { background: var(--a-glass-strong); }
+
+/* =============================================================================================
+ * 7.1 Buttons: capsules. Primary is ember with a lit top edge and a warm glow under it.
+ * =========================================================================================== */
+body.app .a-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--a-s-2);
+  min-height: 44px;
+  padding: 0 var(--a-s-5);
+  border: 0;
+  border-radius: var(--a-r-pill);
+  font-size: var(--a-text-body);
+  line-height: 1.25;
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background-color var(--a-dur-fast) var(--a-ease-out),
+    color var(--a-dur-fast) var(--a-ease-out),
+    transform var(--a-dur-spring) var(--a-ease-spring),
+    box-shadow var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-btn:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(var(--a-press-scale));
+  transition-duration: var(--a-dur-fast), var(--a-dur-fast), var(--a-dur-instant), var(--a-dur-fast);
+}
+
+body.app .a-btn--lg { min-height: 54px; padding: 0 var(--a-s-6); font-size: var(--a-text-title-3); }
+body.app .a-btn--md { min-height: 44px; }
+body.app .a-btn--sm {
+  min-height: 36px;
+  padding: 0 var(--a-s-4);
+  font-size: var(--a-text-small);
+  gap: 6px;
+}
+/* 36px to look at, 44px to hit. */
+body.app .a-btn--sm::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+}
+body.app .a-btn--block { display: flex; width: 100%; }
+
+body.app .a-btn--primary {
+  background: var(--a-accent);
+  color: var(--a-on-accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--a-on-accent) 22%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--a-ink) 12%, transparent),
+    0 6px 18px -8px color-mix(in srgb, var(--a-accent) 75%, transparent);
+}
+body.app .a-btn--primary:active:not(:disabled):not([aria-disabled="true"]) { background: var(--a-clay-press); }
+
+body.app .a-btn--secondary {
+  background: var(--a-surface);
+  color: var(--a-ink);
+  box-shadow: inset 0 0 0 1px var(--a-line-strong), inset 0 1px 0 var(--a-glass-highlight), 0 1px 2px color-mix(in srgb, var(--a-ink) 6%, transparent);
+}
+:root[data-theme="dark"] body.app .a-btn--secondary { background: var(--a-surface-raised); box-shadow: inset 0 0 0 1px var(--a-line-strong), inset 0 1px 0 var(--a-glass-highlight); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.app .a-btn--secondary { background: var(--a-surface-raised); box-shadow: inset 0 0 0 1px var(--a-line-strong), inset 0 1px 0 var(--a-glass-highlight); }
+}
+body.app .a-btn--secondary:active:not(:disabled) { background: var(--a-surface-press); }
+
+body.app .a-btn--ghost { background: transparent; color: var(--a-ink-2); }
+body.app .a-btn--ghost:active:not(:disabled) { background: var(--a-surface-press); }
+
+body.app .a-btn--danger { background: var(--a-danger); color: var(--a-on-danger); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--a-on-danger) 20%, transparent); }
+body.app .a-btn--danger-quiet { background: transparent; color: var(--a-danger-text); }
+
+@media (hover: hover) {
+  body.app .a-btn--primary:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--a-clay-hover); }
+  body.app .a-btn--secondary:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--a-surface-hover); }
+  body.app .a-btn--ghost:hover:not(:disabled):not([aria-disabled="true"]),
+  body.app .a-btn--danger-quiet:hover:not(:disabled) { background: color-mix(in srgb, var(--a-ink) 6%, transparent); }
+  body.app .a-btn--danger:hover:not(:disabled) { background: var(--a-danger-hover); }
+}
+
+/* Quietly unavailable in both themes: a hairline outline, not a dark slab in dark mode. */
+body.app .a-btn:disabled,
+body.app .a-btn[aria-disabled="true"] {
+  background: color-mix(in srgb, var(--a-surface) 70%, transparent);
+  color: var(--a-ink-4);
+  box-shadow: inset 0 0 0 1px var(--a-line);
+}
+body.app .a-btn[aria-busy="true"] { cursor: progress; }
+
+/* Loading spinner (16px): a ring with a bright arc. */
+body.app .a-spinner {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-top-color: currentColor;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-spinner { animation: a-spin 0.7s linear infinite; }
+}
+@keyframes a-spin { to { transform: rotate(1turn); } }
+
+/* Icon-only buttons */
+body.app .a-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--a-r-pill);
+  background: transparent;
+  color: var(--a-ink-2);
+  transition:
+    background-color var(--a-dur-fast) var(--a-ease-out),
+    color var(--a-dur-fast) var(--a-ease-out),
+    transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-icon-btn:active { transform: scale(0.92); background: color-mix(in srgb, var(--a-ink) 8%, transparent); transition-duration: var(--a-dur-fast), var(--a-dur-fast), var(--a-dur-instant); }
+body.app .a-icon-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--a-ink) 8%, transparent); color: var(--a-ink); }
+@media (hover: hover) {
+  body.app .a-icon-btn:hover { background: color-mix(in srgb, var(--a-ink) 6%, transparent); color: var(--a-ink); }
+}
+/* A round glass version, for controls floating over content (sheet close, header buttons). */
+body.app .a-icon-btn--glass {
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight);
+}
+
+/* =============================================================================================
+ * 7.2 Cards: solid, softly elevated, with a lit top edge in the dark.
+ * =========================================================================================== */
+body.app .a-card {
+  position: relative;
+  display: block;
+  background: var(--a-surface);
+  color: var(--a-ink);
+  border-radius: var(--a-r-lg);
+  box-shadow: var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight);
+  padding: var(--a-s-4);
+  text-decoration: none;
+  --a-avatar-gap: var(--a-surface);
+}
+@media (min-width: 1024px) {
+  body.app .a-card { padding: var(--a-s-5); }
+}
+body.app :is(a, button).a-card {
+  width: 100%;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  transition:
+    background-color var(--a-dur-fast) var(--a-ease-out),
+    box-shadow var(--a-dur-base) var(--a-ease-out),
+    transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app :is(a, button).a-card:active { transform: scale(var(--a-press-scale)); transition-duration: var(--a-dur-fast), var(--a-dur-fast), var(--a-dur-instant); }
+@media (hover: hover) {
+  body.app :is(a, button).a-card:hover { box-shadow: var(--a-shadow-2), inset 0 1px 0 var(--a-glass-highlight); transform: translateY(-1px); }
+}
+
+/* Needs you: a warm ember wash from the avatar's corner and an ember hairline. */
+body.app .a-card--needs {
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--a-accent) 12%, transparent), transparent 55%),
+    var(--a-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-accent) 24%, transparent), var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight);
+}
+@media (hover: hover) {
+  body.app :is(a, button).a-card--needs:hover { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-accent) 34%, transparent), var(--a-shadow-2), inset 0 1px 0 var(--a-glass-highlight); }
+}
+
+/* A glass card: translucent over the aura (Home's "happening now", floating summaries). */
+body.app .a-card--glass {
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight), var(--a-shadow-1);
+  --a-avatar-gap: var(--a-surface);
+}
+
+/* Needs-you inbox card (Home): avatar | name + time / line / space */
+body.app .a-inbox-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--a-s-1) var(--a-s-4);
+  align-items: start;
+}
+body.app .a-inbox-card .a-avatar { grid-row: span 3; margin-top: 2px; }
+body.app .a-inbox-card__top { display: flex; align-items: baseline; gap: var(--a-s-2); min-width: 0; }
+body.app .a-inbox-card__name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--a-text-title-3);
+  line-height: var(--a-lh-title-3);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.app .a-inbox-card__time { flex: none; }
+body.app .a-inbox-card__line {
+  font-size: var(--a-text-callout);
+  line-height: var(--a-lh-callout);
+  color: var(--a-ink-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+body.app .a-inbox-card__space { font-size: var(--a-text-caption); line-height: var(--a-lh-caption); font-weight: var(--a-weight-medium); color: var(--a-ink-3); }
+
+/* Space card (Home): tinted by its space (views/home.ts dresses it further). */
+body.app .a-space-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a-s-3);
+  min-height: 168px;
+  overflow: hidden;
+  isolation: isolate;
+}
+body.app .a-space-card__tile,
+body.app .a-space-tile {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--a-r-sm);
+  font-size: 22px;
+  line-height: 1;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, var(--a-space, var(--a-stone)) calc(var(--a-tint) + 14%), var(--a-surface)), color-mix(in srgb, var(--a-space, var(--a-stone)) var(--a-tint), var(--a-surface)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-space, var(--a-stone)) 22%, transparent), inset 0 1px 0 var(--a-glass-highlight);
+}
+body.app .a-space-card__name {
+  font-family: var(--a-font-display);
+  font-size: 1.625rem;
+  line-height: 1.75rem;
+  font-weight: var(--a-weight-regular);
+  letter-spacing: var(--a-tracking-display);
+  text-wrap: balance;
+}
+body.app .a-space-card__sub {
+  margin-top: calc(-1 * var(--a-s-2));
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-regular);
+  color: var(--a-ink-3);
+}
+body.app .a-space-card__status { font-size: var(--a-text-caption); line-height: var(--a-lh-caption); font-weight: var(--a-weight-medium); color: var(--a-ink-3); }
+body.app .a-space-card__status.is-needs { color: var(--a-accent-ink); font-weight: var(--a-weight-semibold); }
+body.app .a-space-card__foot { margin-top: auto; min-height: 24px; }
+
+/* =============================================================================================
+ * 7.3 Groups & rows (inset grouped lists)
+ * =========================================================================================== */
+body.app .a-group {
+  background: var(--a-surface);
+  border-radius: var(--a-r-lg);
+  box-shadow: var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight);
+  overflow: hidden;
+  --a-avatar-gap: var(--a-surface);
+}
+
+body.app .a-row {
+  --a-row-inset: var(--a-s-4);
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--a-s-3);
+  min-height: 56px;
+  width: 100%;
+  padding: var(--a-s-3) var(--a-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--a-ink);
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  transition: background-color var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-row:not(:has(> .a-row__lead)) { grid-template-columns: minmax(0, 1fr) auto; }
+body.app .a-row:has(> .a-row__lead .a-avatar[data-size="48"]) { --a-row-inset: 76px; min-height: 72px; }
+body.app .a-row:has(> .a-row__lead .a-avatar[data-size="40"]) { --a-row-inset: 68px; }
+body.app .a-row:has(> .a-row__lead .a-avatar[data-size="32"]),
+body.app .a-row:has(> .a-row__lead .a-row__icon) { --a-row-inset: 60px; }
+/* Hairline between rows, starting at the text column. */
+body.app .a-row + .a-row::before,
+body.app .a-row-wrap + .a-row-wrap > .a-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--a-row-inset);
+  right: 0;
+  height: 1px;
+  background: var(--a-line);
+  pointer-events: none;
+}
+body.app .a-row-wrap { position: relative; }
+
+body.app :is(a, button).a-row { cursor: pointer; }
+body.app :is(a, button).a-row:active { background: var(--a-surface-press); transition-duration: 0ms; }
+body.app .a-row[aria-current="page"],
+body.app .a-row.is-selected { background: var(--a-surface-press); }
+@media (hover: hover) {
+  body.app :is(a, button).a-row:hover { background: var(--a-surface-hover); }
+}
+body.app .a-row:focus-visible { outline-offset: -2px; border-radius: var(--a-r-md); }
+
+body.app .a-row__lead { display: flex; align-items: center; align-self: start; }
+body.app .a-row:has(.a-row__sub) .a-row__lead { padding-top: 2px; }
+body.app .a-row__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--a-r-sm);
+  background: var(--a-bg-sunk);
+  color: var(--a-ink-2);
+}
+body.app .a-row__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+body.app .a-row__top { display: flex; align-items: baseline; gap: var(--a-s-2); min-width: 0; }
+body.app .a-row__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--a-text-title-3);
+  line-height: var(--a-lh-title-3);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.app .a-row--compact .a-row__title { font-size: var(--a-text-body); }
+body.app .a-row__sub {
+  font-size: var(--a-text-callout);
+  line-height: var(--a-lh-callout);
+  color: var(--a-ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.app .a-row__sub--2 {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+body.app .a-row__meta {
+  flex: none;
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-medium);
+  color: var(--a-ink-3);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+body.app .a-row__trail { display: flex; align-items: center; gap: var(--a-s-2); color: var(--a-ink-4); }
+body.app .a-row__chev { color: var(--a-ink-4); }
+body.app .a-row__line { display: flex; align-items: center; gap: var(--a-s-2); min-width: 0; }
+body.app .a-row__line > .a-row__sub { flex: 1; }
+
+/* A row with a small button inside: the row is a link, the button sits over it. */
+body.app .a-row__action { position: relative; z-index: 1; }
+
+/* =============================================================================================
+ * 7.4 Avatars and the status language
+ *   working  an aqua ring that slowly turns and breathes (a conic arc on a faint track)
+ *   needs    an ember ring with a dot, and a soft ember halo that pulses out
+ *   done     a sage dot and a quiet sage ring
+ *   ready    nothing
+ *   resting  graphite: desaturated, still
+ * The rings are masked (not box-shadow gaps), so they sit cleanly on glass and the aura.
+ * =========================================================================================== */
+body.app .a-avatar {
+  --a-size: 48px;
+  --a-ring-w: 2px;
+  --a-ring-gap: 2px;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--a-size);
+  height: var(--a-size);
+  border-radius: var(--a-r-pill);
+  background:
+    radial-gradient(120% 120% at 30% 18%, color-mix(in srgb, var(--a-who, var(--a-stone)) calc(var(--a-tint) + 16%), var(--a-surface)), color-mix(in srgb, var(--a-who, var(--a-stone)) var(--a-tint), var(--a-surface)) 70%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-who, var(--a-stone)) 18%, transparent), inset 0 1px 0 var(--a-glass-highlight);
+  font-size: calc(var(--a-size) * 0.52);
+  line-height: 1;
+  user-select: none;
+  transition: filter var(--a-dur-base) var(--a-ease-out), opacity var(--a-dur-base) var(--a-ease-out);
+}
+body.app .a-avatar[data-size="24"] { --a-size: 24px; --a-ring-w: 1.5px; --a-ring-gap: 1.5px; }
+body.app .a-avatar[data-size="32"] { --a-size: 32px; --a-ring-w: 1.5px; --a-ring-gap: 1.5px; }
+body.app .a-avatar[data-size="40"] { --a-size: 40px; }
+body.app .a-avatar[data-size="48"] { --a-size: 48px; }
+body.app .a-avatar[data-size="72"] { --a-size: 72px; --a-ring-w: 2.5px; --a-ring-gap: 3px; }
+body.app .a-avatar__emoji { display: block; transform: translateY(0.02em); }
+body.app .a-avatar__letter {
+  font-family: var(--a-font-ui);
+  font-size: calc(var(--a-size) * 0.42);
+  font-weight: var(--a-weight-semibold);
+  color: var(--a-ink-2);
+}
+
+/* Shared ring geometry: a circle just outside the avatar, masked to a thin band. */
+body.app .a-avatar[data-status="working"]::before,
+body.app .a-avatar[data-status="working"]::after,
+body.app .a-avatar[data-status="needs"]::after,
+body.app .a-avatar[data-status="done"]::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * (var(--a-ring-w) + var(--a-ring-gap)));
+  border-radius: 50%;
+  pointer-events: none;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--a-ring-w) - 0.5px), #000 calc(100% - var(--a-ring-w)));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--a-ring-w) - 0.5px), #000 calc(100% - var(--a-ring-w)));
+}
+
+/* Working: a faint aqua track (::before) under a bright arc that turns (::after), with a glow. */
+body.app .a-avatar[data-status="working"]::before {
+  background: color-mix(in srgb, var(--a-status-working) 30%, transparent);
+}
+body.app .a-avatar[data-status="working"]::after {
+  background: conic-gradient(from 0deg, transparent 0turn, color-mix(in srgb, var(--a-status-working) 20%, transparent) 0.2turn, var(--a-status-working) 0.62turn, var(--a-status-working) 0.7turn, transparent 0.72turn);
+  filter: drop-shadow(0 0 3px var(--a-status-working-glow));
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-avatar[data-status="working"]::after { animation: a-ring-turn var(--a-dur-breathe) linear infinite; }
+  body.app .a-avatar[data-status="working"]::before { animation: a-breathe var(--a-dur-breathe) ease-in-out infinite; }
+}
+/* Still, when motion is off: a full aqua ring. */
+@media (prefers-reduced-motion: reduce) {
+  body.app .a-avatar[data-status="working"]::after { background: var(--a-status-working); filter: none; }
+}
+@keyframes a-ring-turn { to { transform: rotate(1turn); } }
+@keyframes a-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Needs you: a solid ember ring, a halo that pulses outward, and the dot. */
+body.app .a-avatar[data-status="needs"]::after { background: var(--a-status-needs); }
+body.app .a-avatar[data-status="needs"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-who, var(--a-stone)) 18%, transparent), 0 0 0 0 color-mix(in srgb, var(--a-status-needs) 45%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-avatar[data-status="needs"] { animation: a-needs-halo 2.6s var(--a-ease-out) infinite; }
+}
+@keyframes a-needs-halo {
+  0% { box-shadow: inset 0 0 0 1px transparent, 0 0 0 calc(var(--a-ring-w) + var(--a-ring-gap)) color-mix(in srgb, var(--a-status-needs) 40%, transparent); }
+  70%, 100% { box-shadow: inset 0 0 0 1px transparent, 0 0 0 calc(var(--a-ring-w) + var(--a-ring-gap) + 9px) color-mix(in srgb, var(--a-status-needs) 0%, transparent); }
+}
+body.app .a-avatar[data-status="done"]::after { background: color-mix(in srgb, var(--a-status-done) 55%, transparent); }
+
+/* The dot for needs-you and finished. */
+body.app .a-avatar[data-status="needs"] > .a-avatar__emoji::after,
+body.app .a-avatar[data-status="needs"] > .a-avatar__letter::after { content: none; }
+body.app .a-avatar[data-status="needs"]::before,
+body.app .a-avatar[data-status="done"]::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--a-status-needs);
+  box-shadow: 0 0 0 2px var(--a-avatar-gap, var(--a-surface)), 0 0 8px color-mix(in srgb, var(--a-status-needs) 60%, transparent);
+}
+body.app .a-avatar[data-status="done"]::before { background: var(--a-status-done); box-shadow: 0 0 0 2px var(--a-avatar-gap, var(--a-surface)); }
+body.app .a-avatar[data-size="24"]::before,
+body.app .a-avatar[data-size="32"]::before { width: 8px; height: 8px; top: -1px; right: -1px; }
+body.app .a-avatar[data-size="72"]::before { width: 14px; height: 14px; top: 0; right: 0; }
+
+/* Resting: graphite and still. */
+body.app .a-avatar[data-status="resting"] { filter: saturate(0.35); opacity: 0.72; }
+
+/* Becoming needs-you: one soft pop. */
+body.app .a-avatar.is-pulse { animation: a-pulse 600ms var(--a-ease-spring) 1; }
+@keyframes a-pulse {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.app .a-avatar.is-pulse { animation: none; }
+}
+
+/* Stack of small avatars: overlapping, each cut out of the card by a ring of its color. */
+body.app .a-avatar-stack { display: inline-flex; align-items: center; padding-left: 8px; }
+body.app .a-avatar-stack > .a-avatar {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px var(--a-avatar-gap, var(--a-surface));
+  animation: none;
+}
+body.app .a-avatar-stack > .a-avatar[data-status="needs"] {
+  box-shadow: 0 0 0 2px var(--a-avatar-gap, var(--a-surface)), 0 0 0 3.5px var(--a-status-needs);
+}
+body.app .a-avatar-stack > .a-avatar[data-status="working"] {
+  box-shadow: 0 0 0 2px var(--a-avatar-gap, var(--a-surface)), 0 0 0 3.5px var(--a-status-working);
+}
+body.app .a-avatar-stack > .a-avatar::before,
+body.app .a-avatar-stack > .a-avatar::after { display: none; }
+
+/* =============================================================================================
+ * 7.5 Status chip: a soft capsule with a dot (working's dot glows and breathes).
+ * =========================================================================================== */
+body.app .a-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px 0 8px;
+  border-radius: var(--a-r-pill);
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-semibold);
+  white-space: nowrap;
+  background: var(--a-stone-soft);
+  color: var(--a-stone-on-soft);
+  width: max-content;
+}
+body.app .a-status__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--a-stone); flex: none; }
+body.app .a-status[data-status="needs"] { background: var(--a-accent-soft); color: var(--a-clay-on-soft); }
+body.app .a-status[data-status="needs"] .a-status__dot { background: var(--a-accent); box-shadow: 0 0 6px color-mix(in srgb, var(--a-accent) 70%, transparent); }
+body.app .a-status[data-status="done"] { background: var(--a-moss-soft); color: var(--a-moss-on-soft); }
+body.app .a-status[data-status="done"] .a-status__dot { background: var(--a-moss); }
+body.app .a-status[data-status="working"] { background: var(--a-lake-soft); color: var(--a-lake-on-soft); }
+body.app .a-status[data-status="working"] .a-status__dot { background: var(--a-lake); box-shadow: 0 0 6px var(--a-status-working-glow); }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-status[data-status="working"] .a-status__dot { animation: a-breathe var(--a-dur-breathe) ease-in-out infinite; }
+}
+
+/* =============================================================================================
+ * 7.6 Badges
+ * =========================================================================================== */
+body.app .a-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--a-r-pill);
+  background: var(--a-accent);
+  color: var(--a-on-accent);
+  font-size: 0.75rem;
+  line-height: 20px;
+  font-weight: var(--a-weight-bold);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--a-accent) 70%, transparent);
+}
+body.app .a-badge--dot { min-width: 0; width: 8px; height: 8px; padding: 0; }
+
+/* =============================================================================================
+ * 7.7 Segmented control: a sunk track and a raised pill that springs between segments.
+ * =========================================================================================== */
+body.app .a-seg {
+  --a-seg-n: 3;
+  --a-seg-i: 0;
+  position: relative;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  padding: 3px;
+  min-height: 44px;
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-ink) 6%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--a-ink) 5%, transparent);
+  isolation: isolate;
+}
+body.app .a-seg__pill {
+  position: absolute;
+  z-index: -1;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / var(--a-seg-n));
+  border-radius: var(--a-r-pill);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight), inset 0 0 0 1px color-mix(in srgb, var(--a-ink) 4%, transparent);
+  transform: translateX(calc(var(--a-seg-i) * 100%));
+  transition: transform var(--a-dur-spring) var(--a-ease-spring);
+}
+:root[data-theme="dark"] body.app .a-seg__pill { background: var(--a-surface-raised); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.app .a-seg__pill { background: var(--a-surface-raised); }
+}
+body.app .a-seg__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 var(--a-s-3);
+  border: 0;
+  border-radius: var(--a-r-pill);
+  background: transparent;
+  color: var(--a-ink-2);
+  font-size: var(--a-text-callout);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-seg__item > span { overflow: hidden; text-overflow: ellipsis; }
+body.app .a-seg__item:is([aria-selected="true"], [aria-checked="true"], [aria-current="page"]) { color: var(--a-ink); }
+/* The track's padding counts as the segment's own: a 44px hit area on a 38px pill. */
+body.app .a-seg__item { position: relative; }
+body.app .a-seg__item::after { content: ''; position: absolute; inset: -3px 0; }
+body.app .a-seg__item:focus-visible { outline-offset: -2px; }
+/* Without the sliding pill (no JS), the chosen segment carries the surface itself. */
+body.app .a-seg:not(:has(.a-seg__pill)) .a-seg__item:is([aria-selected="true"], [aria-checked="true"], [aria-current="page"]) {
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-1);
+}
+@media (min-width: 1024px) and (pointer: fine) {
+  body.app .a-seg { min-height: 38px; }
+  body.app .a-seg__item { min-height: 32px; }
+}
+
+/* ---- Pill tabs (ui.ts pillTabs): a scrollable row of capsules, for more than 3–4 choices ----- */
+body.app .a-pills {
+  display: flex;
+  gap: var(--a-s-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  /* Bleed to the screen edges on a phone so the row scrolls under the gutter, with a soft fade. */
+  margin: 0 calc(-1 * var(--a-gutter));
+  padding: 4px var(--a-gutter);
+  scroll-padding-inline: var(--a-gutter);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--a-gutter), #000 calc(100% - var(--a-gutter)), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 var(--a-gutter), #000 calc(100% - var(--a-gutter)), transparent);
+}
+body.app .a-pills::-webkit-scrollbar { display: none; }
+body.app .a-pill {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 var(--a-s-4);
+  border: 0;
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-surface) 70%, transparent);
+  color: var(--a-ink-2);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight);
+  font-size: var(--a-text-callout);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  white-space: nowrap;
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition:
+    background-color var(--a-dur-base) var(--a-ease-out),
+    color var(--a-dur-base) var(--a-ease-out),
+    box-shadow var(--a-dur-base) var(--a-ease-out),
+    transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-pill::after { content: ''; position: absolute; inset: -3px 0; }
+body.app .a-pill:active { transform: scale(0.95); transition-duration: var(--a-dur-fast), var(--a-dur-fast), var(--a-dur-fast), var(--a-dur-instant); }
+body.app .a-pill .a-badge { height: 18px; min-width: 18px; line-height: 18px; font-size: 0.6875rem; padding: 0 5px; margin-right: -6px; }
+body.app .a-pill:is([aria-selected="true"], [aria-checked="true"], [aria-current="page"]) {
+  background: var(--a-ink);
+  color: var(--a-bg);
+  box-shadow: 0 4px 14px -6px color-mix(in srgb, var(--a-ink) 55%, transparent);
+}
+@media (hover: hover) {
+  body.app .a-pill:not([aria-selected="true"]):not([aria-checked="true"]):not([aria-current="page"]):hover { background: var(--a-surface); color: var(--a-ink); }
+}
+body.app .a-pill:focus-visible { outline-offset: 1px; }
+@media (min-width: 700px) {
+  body.app .a-pills { margin: 0; padding: 4px 2px; -webkit-mask-image: none; mask-image: none; flex-wrap: wrap; overflow: visible; }
+}
+
+/* =============================================================================================
+ * 7.8 Switch
+ * =========================================================================================== */
+body.app .a-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 51px;
+  height: 31px;
+  margin: 0;
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-ink) 16%, transparent);
+  cursor: pointer;
+  transition: background-color var(--a-dur-base) var(--a-ease-out);
+}
+body.app .a-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #FFFFFF; /* the knob is white in both themes, as on iOS */
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--a-ink) 18%, transparent), 0 1px 1px color-mix(in srgb, var(--a-ink) 10%, transparent);
+  transition: transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-switch:checked { background: var(--a-moss); }
+body.app .a-switch:checked::after { transform: translateX(20px); }
+body.app .a-switch:disabled { opacity: 0.5; cursor: default; }
+body.app label.a-row { cursor: pointer; }
+
+/* =============================================================================================
+ * 7.9 Chat bubbles (views/chat.ts; css/teammate.css may dress them further)
+ * =========================================================================================== */
+body.app .a-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 3px;
+}
+body.app .a-msg.is-group-start { padding-top: var(--a-s-4); }
+body.app .a-msg--me { align-items: flex-end; }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-msg.is-new { animation: a-rise var(--a-dur-spring) var(--a-ease-spring) both; }
+  body.app .a-msg--me.is-new { transform-origin: 100% 100%; animation-name: a-bubble-in; }
+}
+@keyframes a-rise {
+  from { opacity: 0; transform: translateY(var(--a-rise)); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes a-bubble-in {
+  from { opacity: 0; transform: translateY(var(--a-rise)) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+body.app .a-bubble {
+  position: relative;
+  max-width: 85%;
+  padding: 10px 15px;
+  border-radius: var(--a-r-lg);
+  font-size: var(--a-text-body);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1024px) {
+  body.app .a-bubble { max-width: min(85%, var(--a-bubble-max)); }
+}
+body.app .a-bubble--me {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--a-on-accent) 10%, transparent), transparent 60%),
+    var(--a-bubble-me-bg);
+  color: var(--a-bubble-me-ink);
+  white-space: pre-wrap;
+  box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--a-accent) 80%, transparent);
+}
+body.app .a-bubble--me a { color: var(--a-bubble-me-link); text-decoration: underline; }
+body.app .a-msg.is-group-end .a-bubble--me { border-bottom-right-radius: var(--a-r-bubble-tail); }
+body.app .a-bubble--them {
+  background: var(--a-bubble-them-bg);
+  color: var(--a-bubble-them-ink);
+  box-shadow: inset 0 0 0 1px var(--a-bubble-them-line), var(--a-shadow-1);
+}
+body.app .a-msg.is-group-end .a-bubble--them { border-bottom-left-radius: var(--a-r-bubble-tail); }
+body.app .a-bubble.is-failed { box-shadow: inset 0 0 0 2px var(--a-danger); }
+body.app .a-bubble.is-sending { opacity: 0.85; }
+
+body.app .a-msg__meta {
+  margin-top: var(--a-s-1);
+  padding: 0 var(--a-s-1);
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-medium);
+  color: var(--a-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+body.app .a-msg:not(.is-group-end) .a-msg__meta:not(.is-important) { display: none; }
+body.app .a-msg__meta.is-failed { color: var(--a-danger-text); font-weight: var(--a-weight-semibold); }
+body.app button.a-msg__meta {
+  border: 0;
+  background: transparent;
+  min-height: 44px;
+  margin-top: -6px;
+  cursor: pointer;
+}
+body.app .a-msg__sender {
+  margin: 0 0 var(--a-s-1) var(--a-s-1);
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-semibold);
+  color: color-mix(in srgb, var(--a-who, var(--a-ink)) 55%, var(--a-ink));
+}
+
+/* A system line: "Meal Planner woke up" */
+body.app .a-sysline,
+body.app .a-day {
+  align-self: center;
+  margin: var(--a-s-4) auto var(--a-s-1);
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-medium);
+  color: var(--a-ink-3);
+  text-align: center;
+}
+body.app .a-day {
+  margin-top: var(--a-s-6);
+  padding: 2px 10px;
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-ink) 5%, transparent);
+}
+
+/* Markdown inside a teammate's bubble */
+body.app .a-bubble .md > :first-child { margin-top: 0; }
+body.app .a-bubble .md > :last-child { margin-bottom: 0; }
+body.app .a-bubble .md :where(p, ul, ol, blockquote, pre, table) { margin: 0 0 0.6em; }
+body.app .a-bubble .md :where(ul, ol) { padding-left: 1.3em; }
+body.app .a-bubble .md li + li { margin-top: 0.2em; }
+body.app .a-bubble .md :where(h1, h2) {
+  font-size: 1.375rem;
+  line-height: 1.625rem;
+  margin: 0.8em 0 0.4em;
+}
+body.app .a-bubble .md :where(h3, h4, h5, h6) {
+  font-family: var(--a-font-ui);
+  font-size: var(--a-text-title-3);
+  font-weight: var(--a-weight-semibold);
+  margin: 0.8em 0 0.3em;
+}
+body.app .a-bubble .md a { color: var(--a-link); }
+body.app .a-bubble .md code {
+  font-family: var(--a-font-mono);
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
+  border-radius: var(--a-r-xs);
+  background: var(--a-code-bg);
+}
+body.app .a-bubble .md pre {
+  overflow-x: auto;
+  padding: var(--a-s-3);
+  border-radius: var(--a-r-sm);
+  background: var(--a-code-bg);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+body.app .a-bubble .md pre code { padding: 0; background: none; font-size: inherit; white-space: pre; }
+body.app .a-bubble .md .a-table-wrap { overflow-x: auto; margin: 0 0 0.6em; max-width: 100%; }
+body.app .a-bubble .md table { border-collapse: collapse; font-size: var(--a-text-callout); font-variant-numeric: tabular-nums; }
+body.app .a-bubble .md :where(th, td) { padding: 6px 10px; border-bottom: 1px solid var(--a-line); text-align: left; white-space: nowrap; }
+body.app .a-bubble .md th { font-weight: var(--a-weight-semibold); }
+body.app .a-bubble .md blockquote { padding-left: var(--a-s-3); border-left: 3px solid var(--a-line-strong); color: var(--a-ink-2); }
+body.app .a-bubble .md img { max-width: 100%; border-radius: var(--a-r-sm); cursor: zoom-in; }
+body.app .a-bubble .md hr { border: 0; border-top: 1px solid var(--a-line); margin: 0.8em 0; }
+body.app .a-bubble .md input[type="checkbox"] { margin: 0 0.4em 0 0; vertical-align: -1px; }
+body.app .a-bubble .md .alert-title { font-weight: var(--a-weight-semibold); }
+
+/* Attachments shown in a bubble */
+body.app .a-bubble__files { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--a-s-2); margin-top: var(--a-s-2); }
+body.app .a-msg--me .a-bubble__files { justify-content: flex-end; }
+body.app .a-bubble__files:first-child { margin-top: 0; }
+body.app .a-thumb {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: var(--a-r-sm);
+  overflow: hidden;
+  background: var(--a-bg-sunk);
+  cursor: zoom-in;
+}
+body.app .a-thumb img { width: 160px; height: 120px; object-fit: cover; }
+body.app .a-thumb.is-broken { display: none; }
+body.app .a-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a-s-2);
+  min-height: 44px;
+  max-width: 240px;
+  padding: 0 var(--a-s-3);
+  border-radius: var(--a-r-pill);
+  background: var(--a-bg-sunk);
+  color: var(--a-ink);
+  font-size: var(--a-text-small);
+  font-weight: var(--a-weight-semibold);
+  text-decoration: none;
+}
+body.app .a-bubble--me .a-file-chip { background: color-mix(in srgb, var(--a-on-accent) 18%, transparent); color: var(--a-bubble-me-ink); }
+body.app .a-file-chip__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Full-screen image viewer */
+body.app .a-lightbox {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(6, 6, 8, 0.94); /* photo backdrop: neutral dark in both themes */
+  display: grid;
+  place-items: center;
+}
+body.app .a-lightbox img { max-width: 96vw; max-height: 90dvh; object-fit: contain; border-radius: var(--a-r-sm); }
+body.app .a-lightbox .a-icon-btn { position: fixed; top: calc(var(--a-safe-top) + 8px); right: 8px; color: #FFFFFF; }
+
+/* =============================================================================================
+ * 7.10 Composer: a glass bar with a capsule field and an ember send button.
+ * =========================================================================================== */
+body.app .a-composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--a-s-2);
+  padding: var(--a-s-2) max(var(--a-s-3), var(--a-safe-right)) max(var(--a-s-2), var(--a-safe-bottom)) max(var(--a-s-3), var(--a-safe-left));
+  background: var(--a-glass-strong);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: 0 -1px 0 var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight);
+}
+body.kb-open .a-composer { padding-bottom: var(--a-s-2); }
+body.app .a-composer__row { display: flex; align-items: flex-end; gap: var(--a-s-1); }
+body.app .a-composer__field {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  max-height: calc(6 * 24px + 20px);
+  padding: 10px var(--a-s-4);
+  border: 1px solid var(--a-glass-line);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--a-surface) 80%, transparent);
+  color: var(--a-ink);
+  font-size: max(16px, 1rem);
+  line-height: 24px;
+  resize: none;
+  overflow-y: auto;
+  transition: border-color var(--a-dur-fast) var(--a-ease-out), box-shadow var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-composer__field::placeholder { color: var(--a-ink-3); }
+body.app .a-composer__field:focus-visible { outline: none; border-color: color-mix(in srgb, var(--a-focus) 60%, transparent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a-focus) 14%, transparent); }
+body.app .a-composer__send {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--a-on-accent);
+  transition:
+    opacity var(--a-dur-fast) var(--a-ease-out),
+    transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-composer__send::before {
+  content: '';
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--a-accent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--a-on-accent) 25%, transparent), 0 4px 12px -4px color-mix(in srgb, var(--a-accent) 80%, transparent);
+  transition: background-color var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-composer__send > .a-icon { position: relative; }
+body.app .a-composer__send.is-hidden { opacity: 0; transform: scale(0.6); pointer-events: none; }
+body.app .a-composer__send:active { transform: scale(0.9); transition-duration: var(--a-dur-fast), var(--a-dur-instant); }
+body.app .a-composer__send:disabled::before { background: var(--a-ink-4); box-shadow: none; }
+@media (hover: hover) {
+  body.app .a-composer__send:hover:not(:disabled)::before { background: var(--a-clay-hover); }
+}
+
+/* Attachment chips in the composer */
+body.app .a-attach-row {
+  display: flex;
+  gap: var(--a-s-2);
+  overflow-x: auto;
+  padding: 6px 2px 2px;
+  scrollbar-width: none;
+}
+body.app .a-attach-row:empty { display: none; }
+body.app .a-attach {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--a-s-2);
+  height: 56px;
+  border-radius: var(--a-r-sm);
+  background: var(--a-surface);
+  box-shadow: inset 0 0 0 1px var(--a-line);
+}
+body.app .a-attach--image { width: 56px; overflow: visible; }
+body.app .a-attach--image img { width: 56px; height: 56px; object-fit: cover; border-radius: var(--a-r-sm); }
+body.app .a-attach--file { height: 44px; margin-top: 6px; padding: 0 36px 0 var(--a-s-3); border-radius: var(--a-r-pill); }
+body.app .a-attach__name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--a-text-small); font-weight: var(--a-weight-semibold); }
+body.app .a-attach__size { font-size: var(--a-text-caption); color: var(--a-ink-3); white-space: nowrap; }
+body.app .a-attach__remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--a-on-accent);
+}
+body.app .a-attach--file .a-attach__remove { top: 0; right: -4px; }
+body.app .a-attach__remove::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--a-ink);
+  box-shadow: 0 0 0 2px var(--a-surface);
+}
+body.app .a-attach__remove > .a-icon { position: relative; color: var(--a-bg); }
+body.app .a-attach.is-uploading::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--a-on-accent);
+  border-right-color: transparent;
+  background: none;
+}
+body.app .a-attach--image.is-uploading img { filter: brightness(0.6); }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-attach.is-uploading::after { animation: a-spin 0.8s linear infinite; }
+}
+body.app .a-attach.is-error { background: var(--a-danger-soft); box-shadow: inset 0 0 0 1px var(--a-danger); }
+
+/* Drop overlay for drag-and-drop */
+body.app .a-drop {
+  position: absolute;
+  inset: var(--a-s-2);
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--a-accent);
+  border-radius: var(--a-r-lg);
+  background: color-mix(in srgb, var(--a-accent-soft) 88%, transparent);
+  color: var(--a-clay-on-soft);
+  font-weight: var(--a-weight-semibold);
+  pointer-events: none;
+}
+
+/* =============================================================================================
+ * 7.11 Ask card
+ * =========================================================================================== */
+body.app .a-ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--a-s-2);
+  margin: var(--a-s-4) 0 var(--a-s-1);
+  padding: var(--a-s-4);
+  border-radius: var(--a-r-lg);
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--a-accent) 16%, transparent), transparent 60%),
+    var(--a-accent-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-accent) 22%, transparent);
+  color: var(--a-ink);
+}
+body.app .a-ask__over { color: var(--a-clay-on-soft); }
+body.app .a-ask__text { font-size: var(--a-text-body); line-height: var(--a-lh-body); }
+body.app .a-ask__actions { display: flex; flex-wrap: wrap; gap: var(--a-s-2); margin-top: var(--a-s-2); }
+
+/* =============================================================================================
+ * 7.12 Typing / thinking indicator
+ * =========================================================================================== */
+body.app .a-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--a-r-lg);
+  border-bottom-left-radius: var(--a-r-bubble-tail);
+  background: var(--a-bubble-them-bg);
+  box-shadow: inset 0 0 0 1px var(--a-bubble-them-line), var(--a-shadow-1);
+  margin-top: var(--a-s-4);
+}
+body.app .a-typing__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--a-ink-3); opacity: 0.6; }
+body.app .a-typing__text { display: none; font-size: var(--a-text-caption); color: var(--a-ink-3); }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-typing__dot { animation: a-dot 1.2s ease-in-out infinite; }
+  body.app .a-typing__dot:nth-child(2) { animation-delay: 160ms; }
+  body.app .a-typing__dot:nth-child(3) { animation-delay: 320ms; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.app .a-typing__dot { display: none; }
+  body.app .a-typing__text { display: inline; }
+}
+@keyframes a-dot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+/* The header's "Thinking…" with animated dots */
+body.app .a-thinking-dots::after { content: '…'; }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-thinking-dots::after {
+    content: '';
+    display: inline-block;
+    width: 1em;
+    text-align: left;
+    animation: a-ellipsis 1.4s steps(4, end) infinite;
+  }
+}
+@keyframes a-ellipsis {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75%, 100% { content: '...'; }
+}
+
+/* =============================================================================================
+ * 7.13 Sheets, dialogs, menus: glass panels that spring into place.
+ * =========================================================================================== */
+body.app dialog.a-sheet,
+body.app dialog.a-dialog {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--a-ink);
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+}
+body.app dialog.a-sheet::backdrop,
+body.app dialog.a-dialog::backdrop {
+  background: var(--a-scrim);
+  -webkit-backdrop-filter: blur(3px) saturate(120%);
+  backdrop-filter: blur(3px) saturate(120%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app dialog.a-sheet[open]::backdrop,
+  body.app dialog.a-dialog[open]::backdrop { animation: a-fade var(--a-dur-base) var(--a-ease-out); }
+  body.app dialog.is-closing::backdrop { animation: a-fade-out var(--a-dur-base) var(--a-ease-in) forwards; }
+}
+@keyframes a-fade { from { opacity: 0; } }
+@keyframes a-fade-out { to { opacity: 0; } }
+
+/* Phone: a bottom sheet of strong glass. */
+body.app dialog.a-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  margin: 0;
+}
+body.app .a-sheet__panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 92vh;
+  max-height: 92dvh;
+  border-radius: var(--a-r-xl) var(--a-r-xl) 0 0;
+  background: var(--a-glass-strong);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  /* The last shadow fills below the panel while the spring overshoots upward. */
+  box-shadow: inset 0 1px 0 var(--a-glass-highlight), inset 0 0 0 1px var(--a-glass-line), var(--a-shadow-3), 0 60px 0 0 var(--a-glass-strong);
+  overflow: hidden;
+  --a-avatar-gap: var(--a-surface-raised);
+  transition: transform var(--a-dur-fast) var(--a-ease-out);
+}
+body.app dialog.a-sheet[open] .a-sheet__panel { animation: a-sheet-in var(--a-dur-spring) var(--a-ease-spring); }
+body.app dialog.a-sheet.is-closing .a-sheet__panel { animation: a-sheet-out var(--a-dur-base) var(--a-ease-in) forwards; }
+@keyframes a-sheet-in { from { transform: translateY(100%); } }
+@keyframes a-sheet-out { to { transform: translateY(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  @keyframes a-sheet-in { from { opacity: 0; } }
+  @keyframes a-sheet-out { to { opacity: 0; } }
+}
+body.app .a-sheet__grabber {
+  flex: none;
+  width: 38px;
+  height: 5px;
+  margin: 7px auto 0;
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-ink) 20%, transparent);
+  touch-action: none;
+}
+body.app .a-sheet__root { display: contents; }
+body.app .a-sheet__head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--a-s-2);
+  padding: var(--a-s-3) var(--a-s-3) var(--a-s-2) var(--a-gutter);
+  touch-action: none;
+}
+body.app .a-sheet__head .a-icon-btn {
+  width: 36px;
+  height: 36px;
+  position: relative;
+  background: color-mix(in srgb, var(--a-ink) 7%, transparent);
+  color: var(--a-ink-2);
+}
+body.app .a-sheet__head .a-icon-btn::before { content: ''; position: absolute; inset: -4px; }
+body.app .a-sheet__head .a-icon-btn .a-icon { width: 18px; height: 18px; }
+body.app .a-sheet__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--a-text-title-2);
+  line-height: var(--a-lh-title-2);
+}
+body.app .a-sheet__sub { padding: 0 var(--a-gutter); margin-top: calc(-1 * var(--a-s-1)); }
+body.app .a-sheet__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--a-s-2) var(--a-gutter) var(--a-s-6);
+}
+body.app .a-sheet__foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--a-s-2);
+  padding: var(--a-s-3) var(--a-gutter) max(var(--a-s-4), var(--a-safe-bottom));
+  box-shadow: 0 -1px 0 var(--a-glass-line);
+  background: color-mix(in srgb, var(--a-glass-strong) 60%, transparent);
+}
+
+/* Wide screens: the same sheet as a centered glass dialog */
+@media (min-width: 700px) {
+  body.app dialog.a-sheet {
+    inset: 0;
+    margin: auto;
+    width: min(540px, 100% - 32px);
+    height: fit-content;
+  }
+  body.app .a-sheet__panel { max-height: min(780px, 88dvh); border-radius: var(--a-r-xl); box-shadow: inset 0 1px 0 var(--a-glass-highlight), inset 0 0 0 1px var(--a-glass-line), var(--a-shadow-3); }
+  body.app .a-sheet__grabber { display: none; }
+  body.app .a-sheet__head { padding-top: var(--a-s-5); padding-left: var(--a-s-6); padding-right: var(--a-s-4); }
+  body.app .a-sheet__body { padding-left: var(--a-s-6); padding-right: var(--a-s-6); }
+  body.app .a-sheet__foot { padding: var(--a-s-4) var(--a-s-6); }
+  body.app dialog.a-sheet[open] .a-sheet__panel { animation: a-dialog-in var(--a-dur-spring) var(--a-ease-spring); }
+  body.app dialog.a-sheet.is-closing .a-sheet__panel { animation: a-dialog-out var(--a-dur-fast) var(--a-ease-in) forwards; }
+  body.app dialog.a-sheet.a-sheet--wide { width: min(900px, 100% - 32px); }
+}
+@keyframes a-dialog-in { from { opacity: 0; transform: translateY(8px) scale(0.96); } }
+@keyframes a-dialog-out { to { opacity: 0; transform: scale(0.97); } }
+
+/* Confirm dialog: centered on every screen */
+body.app dialog.a-dialog {
+  inset: 0;
+  margin: auto;
+  width: min(400px, 100% - 40px);
+  height: fit-content;
+}
+body.app dialog.a-dialog .a-sheet__panel {
+  border-radius: var(--a-r-xl);
+  padding: var(--a-s-6);
+  gap: var(--a-s-6);
+  box-shadow: inset 0 1px 0 var(--a-glass-highlight), inset 0 0 0 1px var(--a-glass-line), var(--a-shadow-3);
+}
+body.app dialog.a-dialog[open] .a-sheet__panel { animation: a-dialog-in var(--a-dur-spring) var(--a-ease-spring); }
+body.app dialog.a-dialog.is-closing .a-sheet__panel { animation: a-dialog-out var(--a-dur-fast) var(--a-ease-in) forwards; }
+body.app .a-dialog__body { display: flex; flex-direction: column; gap: var(--a-s-2); text-align: center; }
+body.app .a-dialog__title { font-size: var(--a-text-title-2); line-height: var(--a-lh-title-2); }
+body.app .a-dialog__text { color: var(--a-ink-2); font-size: var(--a-text-callout); line-height: var(--a-lh-callout); }
+body.app .a-dialog__actions { display: flex; flex-direction: column-reverse; gap: var(--a-s-2); }
+body.app .a-dialog__actions .a-btn { width: 100%; }
+@media (min-width: 700px) {
+  body.app .a-dialog__body { text-align: left; }
+  body.app .a-dialog__actions { flex-direction: row; justify-content: flex-end; }
+  body.app .a-dialog__actions .a-btn { width: auto; }
+}
+
+/* Action sheet rows (phone menus) and popover menu (wide screens) */
+body.app .a-action-sheet { padding-top: var(--a-s-3); }
+body.app .a-action-sheet > .a-group { background: color-mix(in srgb, var(--a-surface) 72%, transparent); box-shadow: inset 0 0 0 1px var(--a-glass-line); }
+body.app .a-menu__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--a-s-3);
+  width: 100%;
+  min-height: 56px;
+  padding: 0 var(--a-s-4);
+  border: 0;
+  background: transparent;
+  color: var(--a-ink);
+  font-size: var(--a-text-title-3);
+  letter-spacing: var(--a-tracking-tight);
+  text-align: left;
+  text-decoration: none;
+}
+body.app .a-menu__item > .a-icon { color: var(--a-ink-2); }
+body.app .a-menu__item.is-danger,
+body.app .a-menu__item.is-danger > .a-icon { color: var(--a-danger-text); }
+body.app .a-menu__item.has-divider::before,
+body.app .a-menu__item + .a-menu__item::after {
+  content: '';
+  position: absolute;
+  left: 50px;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--a-line);
+}
+body.app .a-menu__item.has-divider::before { left: 0; height: 1px; top: 0; background: var(--a-line-strong); }
+body.app .a-menu__item:active { background: color-mix(in srgb, var(--a-ink) 7%, transparent); }
+@media (hover: hover) {
+  body.app .a-menu__item:hover { background: color-mix(in srgb, var(--a-ink) 5%, transparent); }
+}
+body.app .a-menu__item:focus-visible { outline-offset: -2px; }
+
+body.app .a-menu {
+  position: fixed;
+  z-index: var(--a-z-sheet);
+  min-width: 232px;
+  max-width: 300px;
+  padding: 6px;
+  border-radius: var(--a-r-lg);
+  background: var(--a-glass-strong);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 1px 0 var(--a-glass-highlight), inset 0 0 0 1px var(--a-glass-line), var(--a-shadow-float);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-menu { animation: a-pop var(--a-dur-spring) var(--a-ease-spring); }
+}
+@keyframes a-pop { from { opacity: 0; transform: scale(0.92); } }
+body.app .a-menu .a-menu__item {
+  min-height: 40px;
+  padding: 0 var(--a-s-3);
+  border-radius: var(--a-r-sm);
+  font-size: var(--a-text-body);
+}
+body.app .a-menu .a-menu__item + .a-menu__item::after { display: none; }
+body.app .a-menu .a-menu__item.has-divider { margin-top: 9px; }
+body.app .a-menu .a-menu__item.has-divider::before { top: -5px; left: 8px; right: 8px; background: var(--a-line); }
+
+/* ---- Rich actions (ui.ts actionSheet): a tile, a label and a line of what it does ----------- */
+body.app .a-actions { display: grid; gap: var(--a-s-2); }
+body.app .a-action {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--a-s-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--a-s-3) var(--a-s-4) var(--a-s-3) var(--a-s-3);
+  border: 0;
+  border-radius: var(--a-r-lg);
+  background: color-mix(in srgb, var(--a-surface) 78%, transparent);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight);
+  color: var(--a-ink);
+  text-align: left;
+  text-decoration: none;
+  transition: background-color var(--a-dur-fast) var(--a-ease-out), transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-action:active { transform: scale(var(--a-press-scale)); transition-duration: var(--a-dur-fast), var(--a-dur-instant); }
+@media (hover: hover) {
+  body.app .a-action:hover { background: var(--a-surface); }
+}
+body.app .a-action__tile {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  color: var(--a-tile-ink, var(--a-ink));
+  background: var(--a-tile, color-mix(in srgb, var(--a-ink) 7%, transparent));
+  box-shadow: inset 0 1px 0 var(--a-glass-highlight);
+}
+body.app .a-action[data-tone="accent"] { --a-tile: var(--a-accent); --a-tile-ink: var(--a-on-accent); }
+body.app .a-action[data-tone="working"] { --a-tile: var(--a-lake-soft); --a-tile-ink: var(--a-lake-on-soft); }
+body.app .a-action[data-tone="done"] { --a-tile: var(--a-moss-soft); --a-tile-ink: var(--a-moss-on-soft); }
+body.app .a-action[data-tone="honey"] { --a-tile: var(--a-honey-soft); --a-tile-ink: var(--a-honey-on-soft); }
+body.app .a-action__text { display: flex; flex-direction: column; min-width: 0; }
+body.app .a-action__label { font-size: var(--a-text-title-3); line-height: var(--a-lh-title-3); font-weight: var(--a-weight-semibold); letter-spacing: var(--a-tracking-tight); }
+body.app .a-action__hint { font-size: var(--a-text-caption); line-height: var(--a-lh-caption); color: var(--a-ink-3); }
+body.app .a-action__chev { color: var(--a-ink-4); }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-actions > * { animation: a-rise var(--a-dur-spring) var(--a-ease-spring) both; }
+  body.app .a-actions > :nth-child(2) { animation-delay: calc(1 * var(--a-stagger)); }
+  body.app .a-actions > :nth-child(3) { animation-delay: calc(2 * var(--a-stagger)); }
+  body.app .a-actions > :nth-child(4) { animation-delay: calc(3 * var(--a-stagger)); }
+  body.app .a-actions > :nth-child(5) { animation-delay: calc(4 * var(--a-stagger)); }
+  body.app .a-actions > :nth-child(n + 6) { animation-delay: calc(5 * var(--a-stagger)); }
+}
+
+/* =============================================================================================
+ * 7.14 Toasts: a dark glass capsule floating above the tab bar.
+ * =========================================================================================== */
+body.app .a-toasts {
+  position: fixed;
+  z-index: var(--a-z-toast);
+  left: 50%;
+  bottom: calc(var(--a-tabbar-h) + 12px + var(--a-safe-bottom) + var(--a-s-3));
+  transform: translateX(-50%);
+  width: min(420px, 100% - 32px);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+body.app.has-composer .a-toasts { bottom: calc(76px + var(--a-safe-bottom) + var(--a-kb)); }
+@media (min-width: 700px) {
+  body.app .a-toasts { bottom: calc(var(--a-s-6) + var(--a-safe-bottom)); }
+  body.app.has-composer .a-toasts { bottom: 96px; }
+}
+body.app .a-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--a-s-3);
+  max-width: 100%;
+  min-height: 48px;
+  padding: var(--a-s-3) var(--a-s-5);
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-toast-bg) 90%, transparent);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  color: var(--a-toast-ink);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--a-toast-ink) 10%, transparent), var(--a-shadow-float);
+  font-size: var(--a-text-callout);
+  line-height: var(--a-lh-callout);
+  font-weight: var(--a-weight-medium);
+  pointer-events: auto;
+  transition: opacity var(--a-dur-fast) var(--a-ease-in), transform var(--a-dur-fast) var(--a-ease-in);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-toast { animation: a-toast-in var(--a-dur-spring) var(--a-ease-spring); }
+}
+@keyframes a-toast-in { from { opacity: 0; transform: translateY(14px) scale(0.94); } }
+body.app .a-toast.is-leaving { opacity: 0; transform: translateY(6px) scale(0.98); }
+body.app .a-toast[data-level="warn"] > .a-icon { color: var(--a-honey); }
+body.app .a-toast[data-level="error"] > .a-icon { color: var(--a-danger-on-soft); }
+body.app .a-toast__text { flex: 1; min-width: 0; }
+body.app .a-toast__action {
+  flex: none;
+  min-height: 44px;
+  margin: -12px -10px -12px 0;
+  padding: 0 var(--a-s-3);
+  border: 0;
+  background: transparent;
+  color: var(--a-toast-action);
+  font-weight: var(--a-weight-semibold);
+}
+
+/* =============================================================================================
+ * 7.15 Connection banner
+ * =========================================================================================== */
+body.app .a-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--a-s-2);
+  min-height: 40px;
+  padding: var(--a-s-1) var(--a-gutter);
+  background: color-mix(in srgb, var(--a-honey-soft) 88%, transparent);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  color: var(--a-honey-on-soft);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--a-honey) 25%, transparent);
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-semibold);
+  text-align: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-banner { animation: a-banner-in var(--a-dur-spring) var(--a-ease-spring); }
+}
+@keyframes a-banner-in { from { transform: translateY(-100%); opacity: 0; } }
+body.app .a-banner.is-online { background: color-mix(in srgb, var(--a-moss-soft) 88%, transparent); color: var(--a-moss-on-soft); box-shadow: 0 1px 0 color-mix(in srgb, var(--a-moss) 25%, transparent); }
+body.app .a-banner .a-btn { min-height: 32px; color: inherit; font-size: var(--a-text-caption); }
+body.app .a-banner .a-spinner { width: 14px; height: 14px; }
+
+/* =============================================================================================
+ * 7.16 Empty states: a glowing tile, a serif line, one warm sentence.
+ * =========================================================================================== */
+body.app .a-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--a-s-2);
+  max-width: 320px;
+  margin: 0 auto;
+  padding: var(--a-s-12) 0 var(--a-s-8);
+  text-align: center;
+}
+body.app .a-empty__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--a-s-3);
+  border-radius: 26px;
+  background:
+    radial-gradient(100% 100% at 30% 15%, color-mix(in srgb, var(--a-surface) 90%, transparent), transparent 70%),
+    color-mix(in srgb, var(--a-space, var(--a-accent)) 12%, var(--a-surface));
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight), 0 18px 40px -18px color-mix(in srgb, var(--a-space, var(--a-accent)) 55%, transparent);
+  color: var(--a-ink-2);
+  font-size: 38px;
+  line-height: 1;
+}
+body.app .a-empty__title { font-size: var(--a-text-title-2); line-height: var(--a-lh-title-2); }
+body.app .a-empty__text { font-size: var(--a-text-callout); line-height: var(--a-lh-callout); color: var(--a-ink-2); }
+body.app .a-empty__action { margin-top: var(--a-s-4); }
+
+/* =============================================================================================
+ * 7.17 Skeletons: a soft light sweeps across.
+ * =========================================================================================== */
+body.app .a-skeleton {
+  display: block;
+  background: var(--a-skeleton);
+  border-radius: var(--a-r-xs);
+}
+body.app .a-skeleton--line { height: 12px; margin: 6px 0; border-radius: var(--a-r-pill); }
+body.app .a-skeleton--circle { border-radius: 50%; flex: none; }
+body.app .a-skeleton--block { width: 100%; border-radius: var(--a-r-lg); }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-skeleton {
+    background: linear-gradient(100deg, var(--a-skeleton) 30%, var(--a-skeleton-hi) 50%, var(--a-skeleton) 70%) 0 0 / 300% 100%;
+    animation: a-shimmer var(--a-dur-shimmer) ease-in-out infinite;
+  }
+}
+@keyframes a-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+body.app .a-row--skeleton { min-height: 72px; }
+
+/* =============================================================================================
+ * 7.19 Fields
+ * =========================================================================================== */
+body.app .a-field { display: flex; flex-direction: column; gap: 6px; }
+body.app .a-field__label {
+  font-size: var(--a-text-small);
+  line-height: var(--a-lh-small);
+  font-weight: var(--a-weight-semibold);
+  color: var(--a-ink-2);
+}
+body.app .a-field__control {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid var(--a-line-strong);
+  border-radius: var(--a-r-md);
+  background: var(--a-bg-sunk);
+  color: var(--a-ink);
+  box-shadow: var(--a-shadow-inset);
+  font-size: max(16px, 1rem);
+  line-height: var(--a-lh-body);
+  transition: border-color var(--a-dur-fast) var(--a-ease-out), box-shadow var(--a-dur-fast) var(--a-ease-out);
+}
+body.app :is(.a-card, .a-group, .a-sheet__panel) .a-field__control { background: var(--a-surface); }
+:root[data-theme="dark"] body.app :is(.a-card, .a-group, .a-sheet__panel) .a-field__control { background: var(--a-bg-sunk); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.app :is(.a-card, .a-group, .a-sheet__panel) .a-field__control { background: var(--a-bg-sunk); }
+}
+body.app textarea.a-field__control { min-height: 96px; resize: vertical; }
+body.app select.a-field__control { appearance: none; -webkit-appearance: none; padding-right: 40px; background-image: linear-gradient(45deg, transparent 50%, var(--a-ink-3) 50%), linear-gradient(135deg, var(--a-ink-3) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 15px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+body.app .a-field__control::placeholder { color: var(--a-ink-3); }
+body.app .a-field__control:focus-visible {
+  outline: none;
+  border-color: var(--a-focus);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--a-focus) 18%, transparent);
+}
+body.app .a-field__control[aria-invalid="true"] { border-color: var(--a-danger); }
+body.app .a-field__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--a-text-small);
+  color: var(--a-danger-text);
+}
+body.app .a-field__hint { font-size: var(--a-text-caption); line-height: var(--a-lh-caption); color: var(--a-ink-3); }
+
+/* =============================================================================================
+ * Meter (ui.ts meter): a thin capsule bar, for usage and budgets. data-level="near|over".
+ * =========================================================================================== */
+body.app .a-meter {
+  position: relative;
+  height: 6px;
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-ink) 8%, transparent);
+  overflow: hidden;
+}
+body.app .a-meter__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--a-meter, 0) * 1%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--a-status-working) 70%, transparent), var(--a-status-working));
+  box-shadow: 0 0 10px var(--a-status-working-glow);
+  transition: width var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-meter[data-level="near"] .a-meter__fill { background: var(--a-honey); box-shadow: none; }
+body.app .a-meter[data-level="over"] .a-meter__fill { background: var(--a-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--a-accent) 50%, transparent); }
+
+/* =============================================================================================
+ * "Behind the scenes": the office's own terminal window (ui/terminal.ts), dressed in Hearth's
+ * colors. It brings its own markup (.backdrop > .modal.term); only the frame is restyled here.
+ * =========================================================================================== */
+body.app #modal-root .backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--a-z-sheet);
+  display: grid;
+  place-items: center;
+  padding: max(var(--a-s-4), var(--a-safe-top)) var(--a-s-4) max(var(--a-s-4), var(--a-safe-bottom));
+  background: var(--a-scrim);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+body.app #modal-root .modal.term {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1200px, 100%);
+  height: min(820px, 100%);
+  border-radius: var(--a-r-lg);
+  overflow: hidden;
+  background: #1E1F2E; /* the terminal's own screen color (TERM_THEME), same in both themes */
+  box-shadow: var(--a-shadow-3);
+}
+@media (max-width: 699px) {
+  body.app #modal-root .backdrop { padding: 0; }
+  body.app #modal-root .modal.term { width: 100%; height: 100%; border-radius: 0; padding-top: var(--a-safe-top); }
+}
+body.app #modal-root .modal.term > header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--a-s-2);
+  min-height: 56px;
+  padding: var(--a-s-2) var(--a-s-2) var(--a-s-2) var(--a-s-4);
+  background: var(--a-surface);
+  color: var(--a-ink);
+  border-bottom: 1px solid var(--a-line);
+}
+body.app #modal-root .modal.term > header h2 {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--a-font-ui);
+  font-weight: var(--a-weight-semibold);
+  font-size: var(--a-text-title-3);
+  line-height: var(--a-lh-title-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.app #modal-root .modal.term .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+body.app #modal-root .modal.term :is(.pill, .cost, .typed, .viewers) { display: none; }
+body.app #modal-root .modal.term .btn {
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 var(--a-s-3);
+  border: 0;
+  border-radius: var(--a-r-pill);
+  background: transparent;
+  color: var(--a-ink-2);
+  font-weight: var(--a-weight-semibold);
+}
+@media (hover: hover) {
+  body.app #modal-root .modal.term .btn:hover { background: var(--a-surface-hover); color: var(--a-ink); }
+}
+body.app #modal-root .modal.term .hidden { display: none !important; }
+body.app #modal-root .modal.term .term-host { flex: 1; min-height: 0; padding: 8px 4px 4px 10px; background: #1E1F2E; }
+body.app #modal-root .modal.term .term-host .xterm { height: 100%; }
+body.app #toasts { display: none; }
+body.app dialog:focus-visible { outline: none; }

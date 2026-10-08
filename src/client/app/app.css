@@ -1,0 +1,1075 @@
+/*
+ * Hearth's shell, "Evening Glass" (docs/app/REDESIGN.md §1; structure: docs/app/DESIGN.md §4, §7.18, §11).
+ *   phone  (< 700)      a floating glass tab bar (Home · Chats · Create · Settings), screens push
+ *   tablet (700–1023)   an 80px glass icon rail on the left
+ *   desktop (≥ 1024)    a 264px glass sidebar that lists the spaces
+ * Behind everything: the aura, a slow glow in the current space's color (--a-space on <html>).
+ * Phone styles are the default; wider screens add to them with min-width queries.
+ */
+
+/* ---------------------------------------------------------------------------------------------
+ * The aura: two soft glows (the space's color and the ember) that drift, plus a whisper of grain.
+ * It lives on body's own layers under everything, so html paints the ground and body stays clear.
+ * ------------------------------------------------------------------------------------------- */
+html:has(body.app) {
+  transition: --a-aura-1 1200ms var(--a-ease-in-out), --a-aura-2 1200ms var(--a-ease-in-out);
+}
+body.app { background: transparent; overscroll-behavior-y: none; }
+body.app::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: -20% -30% auto -30%;
+  height: 120vh;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 32% at 18% 16%, var(--a-aura-1), transparent 72%),
+    radial-gradient(36% 28% at 86% 10%, var(--a-aura-2), transparent 70%),
+    radial-gradient(50% 30% at 62% 46%, color-mix(in oklab, var(--a-aura-1) 45%, transparent), transparent 70%);
+  transform-origin: 50% 20%;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app::before { animation: a-aura-drift 38s var(--a-ease-in-out) infinite alternate; }
+}
+@keyframes a-aura-drift {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  50% { transform: translate3d(4%, 3%, 0) rotate(8deg) scale(1.08); }
+  100% { transform: translate3d(-5%, 1%, 0) rotate(-6deg) scale(1.02); }
+}
+/* Grain: breaks up gradient banding and gives the glass something to frost. */
+body.app::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Frame
+ * ------------------------------------------------------------------------------------------- */
+body.app .a-skip {
+  position: fixed;
+  z-index: var(--a-z-toast);
+  top: calc(var(--a-safe-top) + 8px);
+  left: 8px;
+  padding: var(--a-s-2) var(--a-s-4);
+  border-radius: var(--a-r-pill);
+  background: var(--a-surface);
+  color: var(--a-ink);
+  box-shadow: var(--a-shadow-2);
+  transform: translateY(-200%);
+}
+body.app .a-skip:focus-visible { transform: none; }
+
+body.app .a-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* The status bar strip on a phone (viewport-fit=cover): glass, so scrolled text never runs under the clock. */
+body.app .a-statusbar {
+  position: fixed;
+  z-index: calc(var(--a-z-header) + 2);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--a-safe-top);
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  pointer-events: none;
+}
+
+body.app .a-stage {
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.app .a-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* A screen pushing in from the right must never leave the page scrollable sideways. clip (not
+     hidden) keeps the sticky headers working. */
+  overflow-x: clip;
+  /* Room under the content for the floating tab bar and its gap. */
+  padding-bottom: calc(var(--a-tabbar-h) + 12px + var(--a-safe-bottom) + var(--a-s-4));
+}
+body.app .a-main:focus { outline: none; }
+body.app:is(.is-chat, .is-immersive) .a-main { padding-bottom: 0; }
+
+/* A screen: what a view renders into. The shell pushes / pops / fades it (View Transitions where the
+   browser has them; these classes otherwise). */
+body.app .a-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* The screen is named for View Transitions only while one runs (main.ts sets html[data-nav] just
+   before starting it): a named element is a backdrop root in Chromium, which would stop every
+   backdrop-filter inside the screen (glass headers, glass cards) from blurring what's behind it. */
+html[data-nav] body.app .a-screen { view-transition-name: a-screen; }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-screen.is-push { animation: a-push-in var(--a-dur-spring) var(--a-ease-spring) both; }
+  body.app .a-screen.is-pop { animation: a-pop-in var(--a-dur-slow) var(--a-ease-out) both; }
+  body.app .a-screen.is-fade { animation: a-fade-in var(--a-dur-base) var(--a-ease-out) both; }
+}
+@keyframes a-push-in {
+  from { opacity: 0.4; transform: translateX(min(40%, 160px)); }
+}
+@keyframes a-pop-in {
+  from { opacity: 0.4; transform: translateX(calc(-1 * var(--a-push))); }
+}
+@keyframes a-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+@media (min-width: 700px) {
+  @keyframes a-push-in { from { opacity: 0; transform: translateY(var(--a-rise)); } }
+  @keyframes a-pop-in { from { opacity: 0; transform: translateY(calc(-1 * var(--a-rise))); } }
+}
+
+/* ---- View Transitions: only the screen moves; the tab bar, nav and aura stay put. ----------- */
+html[data-nav] body.app .a-tabbar { view-transition-name: a-tabbar; }
+html[data-nav] body.app .a-nav { view-transition-name: a-nav; }
+::view-transition-group(a-screen) { animation-duration: var(--a-dur-spring); }
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+/* Push: the new screen slides in from the right while the old drifts left and fades quickly (the
+   screens have no ground of their own, so the old one must be gone before they overlap much). */
+html[data-nav="push"]::view-transition-old(a-screen) { animation: a-vt-drift-left var(--a-dur-spring) var(--a-ease-spring) both, a-vt-fade-out 160ms var(--a-ease-out) both; }
+html[data-nav="push"]::view-transition-new(a-screen) { animation: a-vt-from-right var(--a-dur-spring) var(--a-ease-spring) both, a-vt-fade-in-plain 200ms var(--a-ease-out) both; }
+/* Back: the old screen slides away to the right as the one coming back drifts in from the left. */
+html[data-nav="pop"]::view-transition-old(a-screen) { z-index: 1; animation: a-vt-to-right var(--a-dur-slow) var(--a-ease-out) both, a-vt-fade-out 180ms var(--a-ease-out) both; }
+html[data-nav="pop"]::view-transition-new(a-screen) { animation: a-vt-from-left var(--a-dur-slow) var(--a-ease-out) both, a-vt-fade-in-plain 240ms var(--a-ease-out) both; }
+/* Tabs: a quick crossfade with a small rise. */
+html[data-nav="fade"]::view-transition-old(a-screen) { animation: a-vt-fade-out var(--a-dur-fast) var(--a-ease-in) both; }
+html[data-nav="fade"]::view-transition-new(a-screen) { animation: a-vt-fade-in var(--a-dur-base) var(--a-ease-out) both; }
+::view-transition-group(a-screen) { mix-blend-mode: normal; }
+::view-transition-image-pair(a-screen) { isolation: auto; }
+@keyframes a-vt-drift-left { to { transform: translateX(-24%); } }
+@keyframes a-vt-from-right { from { transform: translateX(70%); } }
+@keyframes a-vt-to-right { to { transform: translateX(60%); } }
+@keyframes a-vt-from-left { from { transform: translateX(-24%); } }
+@keyframes a-vt-fade-out { to { opacity: 0; } }
+@keyframes a-vt-fade-in-plain { from { opacity: 0; } }
+@keyframes a-vt-fade-in { from { opacity: 0; transform: translateY(6px); } }
+@media (min-width: 700px) {
+  html[data-nav="push"]::view-transition-old(a-screen),
+  html[data-nav="pop"]::view-transition-old(a-screen) { animation: a-vt-fade-out var(--a-dur-fast) var(--a-ease-in) both; }
+  html[data-nav="push"]::view-transition-new(a-screen) { animation: a-vt-fade-in var(--a-dur-base) var(--a-ease-out) both; }
+  html[data-nav="pop"]::view-transition-new(a-screen) { animation: a-vt-fade-in var(--a-dur-base) var(--a-ease-out) both; }
+}
+
+/* The boot splash: only the wordmark, for the moment before the first screen. */
+body.app .a-boot {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: 60dvh;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-boot { animation: a-fade-in 600ms var(--a-ease-out) 300ms both; }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Wordmark: "Hearth·" in Instrument Serif, the dot an ember that glows.
+ * ------------------------------------------------------------------------------------------- */
+body.app .a-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--a-font-display);
+  font-size: 1.875rem;
+  line-height: 1;
+  font-weight: var(--a-weight-regular);
+  letter-spacing: -0.01em;
+  color: var(--a-ink);
+  text-decoration: none;
+}
+body.app .a-wordmark__dot {
+  display: inline-block;
+  width: 0.22em;
+  height: 0.22em;
+  margin-left: 0.06em;
+  border-radius: 50%;
+  background: var(--a-accent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--a-accent) 70%, transparent);
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Page containers and the screen header
+ * ------------------------------------------------------------------------------------------- */
+body.app .a-page {
+  width: 100%;
+  max-width: var(--a-content-w);
+  margin: 0 auto;
+  padding: var(--a-s-4) max(var(--a-gutter), var(--a-safe-right)) var(--a-s-10) max(var(--a-gutter), var(--a-safe-left));
+}
+body.app .a-page--read { max-width: calc(var(--a-read-w) + 2 * var(--a-gutter)); }
+body.app .a-page--top { padding-top: calc(var(--a-safe-top) + var(--a-s-8)); }
+body.app .a-page > * + * { margin-top: var(--a-s-8); }
+@media (min-width: 1024px) {
+  body.app .a-page { padding-top: var(--a-s-8); }
+  body.app .a-page--top { padding-top: var(--a-s-12); }
+  body.app .a-page > * + * { margin-top: var(--a-s-10); }
+}
+
+/* The header: clear over the large title, frosted glass with a hairline once she scrolls. */
+body.app .a-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--a-z-header);
+  display: grid;
+  grid-template-columns: minmax(44px, 1fr) minmax(0, auto) minmax(44px, 1fr);
+  align-items: center;
+  gap: var(--a-s-1);
+  min-height: calc(var(--a-header-h) + var(--a-safe-top));
+  padding: var(--a-safe-top) max(var(--a-s-2), var(--a-safe-right)) 0 max(var(--a-s-2), var(--a-safe-left));
+  background: transparent;
+  box-shadow: 0 1px 0 transparent;
+  transition: background-color var(--a-dur-base) var(--a-ease-out), box-shadow var(--a-dur-base) var(--a-ease-out), -webkit-backdrop-filter var(--a-dur-base) var(--a-ease-out), backdrop-filter var(--a-dur-base) var(--a-ease-out);
+}
+body.app .a-header.is-scrolled {
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: 0 1px 0 var(--a-glass-line);
+}
+/* Wide screens: Back and … line up with the content column under them, not the window's edges. */
+@media (min-width: 1024px) {
+  body.app .a-screen > .a-header {
+    padding-left: calc(max(0px, (100% - var(--a-content-w)) / 2) + var(--a-gutter) - var(--a-s-2));
+    padding-right: calc(max(0px, (100% - var(--a-content-w)) / 2) + var(--a-gutter) - 11px);
+  }
+}
+body.app .a-header__start { display: flex; align-items: center; min-width: 0; justify-self: start; }
+/* Pinned to the last column: on wide screens the middle title is display:none and must not pull it to the center. */
+body.app .a-header__end { grid-column: -2; display: flex; align-items: center; justify-content: flex-end; gap: var(--a-s-1); justify-self: end; }
+body.app .a-header__title {
+  min-width: 0;
+  font-size: var(--a-text-title-3);
+  line-height: var(--a-lh-title-3);
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity var(--a-dur-base) var(--a-ease-out), transform var(--a-dur-spring) var(--a-ease-spring);
+}
+/* The small title shows once the big one has scrolled away (iOS style); the back label steps aside for it. */
+body.app .a-header.is-scrolled .a-header__title { opacity: 1; transform: none; }
+body.app .a-header.is-scrolled .a-back > span { display: none; }
+@media (min-width: 700px) {
+  /* Wide screens keep the back label; the sidebar or rail already says where she is. */
+  body.app .a-header__title { display: none; }
+  body.app .a-header.is-scrolled .a-back > span { display: inline; }
+}
+/* Header buttons float in glass circles over the content, like iOS 26. */
+body.app .a-header .a-icon-btn {
+  background: color-mix(in srgb, var(--a-surface) 55%, transparent);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight);
+  color: var(--a-ink);
+}
+
+/* Back: chevron + the previous screen's name. */
+body.app .a-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 0 var(--a-s-3) 0 var(--a-s-1);
+  border: 0;
+  border-radius: var(--a-r-pill);
+  background: transparent;
+  color: var(--a-accent-ink);
+  font-size: var(--a-text-title-3);
+  font-weight: var(--a-weight-medium);
+  letter-spacing: var(--a-tracking-tight);
+  text-decoration: none;
+  transition: background-color var(--a-dur-fast) var(--a-ease-out), transform var(--a-dur-spring) var(--a-ease-spring);
+}
+body.app .a-back > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 9.5em; }
+@media (hover: hover) {
+  body.app .a-back:hover { background: color-mix(in srgb, var(--a-ink) 6%, transparent); }
+}
+body.app .a-back:active { transform: scale(var(--a-press-scale)); transition-duration: var(--a-dur-fast), var(--a-dur-instant); }
+
+/* Large title in the content */
+body.app .a-large-title {
+  font-family: var(--a-font-display);
+  font-size: var(--a-text-title-1);
+  line-height: var(--a-lh-title-1);
+  font-weight: var(--a-weight-regular);
+  letter-spacing: var(--a-tracking-display);
+}
+
+/* Home's greeting */
+body.app .a-greeting {
+  font-family: var(--a-font-display);
+  font-size: var(--a-text-display);
+  line-height: var(--a-lh-display);
+  font-weight: var(--a-weight-regular);
+  letter-spacing: -0.018em;
+}
+@media (max-width: 359px) {
+  body.app .a-greeting { font-size: 2.375rem; line-height: 2.5rem; }
+}
+@media (min-width: 1024px) {
+  body.app .a-greeting { font-size: 3.75rem; line-height: 3.75rem; }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Phone tab bar: a floating glass capsule, inset from the edges, with a pill that slides to the
+ * current tab, and a raised ember ✚ in the middle for Create.
+ * ------------------------------------------------------------------------------------------- */
+body.app .a-tabbar {
+  --a-tab-i: 0;
+  --a-tab-n: 4;
+  position: fixed;
+  z-index: var(--a-z-tabbar);
+  left: max(14px, var(--a-safe-left));
+  right: max(14px, var(--a-safe-right));
+  bottom: max(12px, calc(var(--a-safe-bottom) - 4px));
+  display: grid;
+  grid-template-columns: repeat(var(--a-tab-n), minmax(0, 1fr));
+  align-items: center;
+  height: var(--a-tabbar-h);
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: var(--a-r-pill);
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight), var(--a-shadow-float);
+  isolation: isolate;
+  --a-tab-bg: var(--a-surface);
+}
+body.app:is(.is-chat, .is-immersive) .a-tabbar { display: none; }
+body.app .a-tabbar__pill {
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / var(--a-tab-n));
+  border-radius: var(--a-r-pill);
+  background: color-mix(in srgb, var(--a-ink) 8%, transparent);
+  box-shadow: inset 0 1px 0 var(--a-glass-highlight);
+  transform: translateX(calc(var(--a-tab-i) * 100%));
+  transition: transform var(--a-dur-spring) var(--a-ease-spring), opacity var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-tabbar[data-none] .a-tabbar__pill { opacity: 0; }
+body.app .a-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 100%;
+  min-height: 44px;
+  border-radius: var(--a-r-pill);
+  color: var(--a-ink-3);
+  font-size: 0.6875rem;
+  line-height: 0.875rem;
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: color var(--a-dur-fast) var(--a-ease-out);
+}
+body.app .a-tab[aria-current="page"] { color: var(--a-ink); }
+body.app .a-tab[aria-current="page"] .a-icon { stroke-width: 2.1; }
+body.app .a-tab__icon { position: relative; transition: transform var(--a-dur-spring) var(--a-ease-spring); }
+body.app .a-tab:active .a-tab__icon { transform: scale(0.86); transition-duration: var(--a-dur-instant); }
+body.app .a-tab__icon .a-badge {
+  position: absolute;
+  top: -5px;
+  left: calc(100% - 9px);
+  height: 18px;
+  min-width: 18px;
+  line-height: 18px;
+  font-size: 0.6875rem;
+  padding: 0 5px;
+  box-shadow: 0 0 0 2px var(--a-tab-bg), 0 2px 8px -2px color-mix(in srgb, var(--a-accent) 70%, transparent);
+}
+body.app .a-tab:focus-visible { outline-offset: -4px; }
+
+/* Create: a raised ember disc, not a destination (it opens a sheet). */
+body.app .a-tab--create { color: var(--a-on-accent); border: 0; background: transparent; padding: 0; }
+body.app .a-tab--create .a-tab__disc {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background:
+    radial-gradient(90% 90% at 30% 20%, color-mix(in srgb, var(--a-on-accent) 24%, transparent), transparent 60%),
+    var(--a-accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--a-on-accent) 30%, transparent),
+    0 8px 20px -6px color-mix(in srgb, var(--a-accent) 80%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--a-accent) 12%, transparent);
+  transition: transform var(--a-dur-spring) var(--a-ease-spring), box-shadow var(--a-dur-base) var(--a-ease-out);
+}
+body.app .a-tab--create .a-icon { stroke-width: 2.25; }
+body.app .a-tab--create:active .a-tab__disc { transform: scale(0.9) rotate(45deg); transition-duration: var(--a-dur-fast); }
+body.app .a-tab--create[aria-expanded="true"] .a-tab__disc { transform: rotate(45deg); }
+@media (hover: hover) {
+  body.app .a-tab--create:hover .a-tab__disc { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--a-on-accent) 30%, transparent), 0 10px 26px -6px color-mix(in srgb, var(--a-accent) 90%, transparent), 0 0 0 6px color-mix(in srgb, var(--a-accent) 16%, transparent); }
+  body.app .a-tab:not(.a-tab--create):not([aria-current="page"]):hover { color: var(--a-ink); }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Rail (tablet) and sidebar (desktop): the same <nav>, drawn two ways, in glass over the aura.
+ * Hidden on phones.
+ * ------------------------------------------------------------------------------------------- */
+body.app .a-nav { display: none; }
+body.app .a-nav__create { display: none; }
+
+@media (min-width: 700px) {
+  body.app .a-shell {
+    display: grid;
+    grid-template-columns: var(--a-rail-w) minmax(0, 1fr);
+  }
+  body.app .a-tabbar { display: none; }
+  body.app .a-main { padding-bottom: 0; }
+  body.app .a-statusbar { display: none; }
+
+  body.app .a-nav {
+    position: sticky;
+    top: 0;
+    z-index: var(--a-z-tabbar);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--a-s-1);
+    height: 100vh;
+    height: 100dvh;
+    padding: calc(var(--a-safe-top) + var(--a-s-4)) var(--a-s-2) calc(var(--a-safe-bottom) + var(--a-s-4));
+    background: color-mix(in srgb, var(--a-glass) 70%, transparent);
+    -webkit-backdrop-filter: var(--a-glass-blur);
+    backdrop-filter: var(--a-glass-blur);
+    box-shadow: 1px 0 0 var(--a-glass-line);
+    overflow-y: auto;
+    scrollbar-width: none;
+    --a-avatar-gap: var(--a-bg-sunk);
+  }
+  body.app .a-nav .a-wordmark,
+  body.app .a-nav .a-nav__label,
+  body.app .a-nav .a-overline,
+  body.app .a-nav .a-nav__count,
+  body.app .a-nav__account { display: none; }
+
+  body.app .a-nav__item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 64px;
+    min-height: 58px;
+    padding: var(--a-s-1) 0;
+    border: 0;
+    border-radius: var(--a-r-md);
+    background: transparent;
+    color: var(--a-ink-3);
+    font-size: 0.6875rem;
+    line-height: 0.875rem;
+    font-weight: var(--a-weight-semibold);
+    text-decoration: none;
+    transition: background-color var(--a-dur-fast) var(--a-ease-out), color var(--a-dur-fast) var(--a-ease-out), transform var(--a-dur-spring) var(--a-ease-spring);
+  }
+  body.app .a-nav__item:active { transform: scale(var(--a-press-scale)); transition-duration: var(--a-dur-fast), var(--a-dur-fast), var(--a-dur-instant); }
+  body.app .a-nav__item .a-nav__rail-label { display: block; }
+  body.app .a-nav__item[aria-current="page"] {
+    color: var(--a-ink);
+    background: var(--a-surface);
+    box-shadow: var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight);
+  }
+  body.app .a-nav__item .a-badge { position: absolute; top: 4px; right: 8px; box-shadow: 0 0 0 2px var(--a-bg); }
+  body.app .a-nav__divider { width: 32px; height: 1px; margin: var(--a-s-2) 0; background: var(--a-line); flex: none; }
+  body.app .a-nav__spaces { display: flex; flex-direction: column; align-items: center; gap: var(--a-s-1); }
+  body.app .a-nav__space { min-height: 54px; }
+  body.app .a-nav__space .a-space-tile { width: 44px; height: 44px; font-size: 22px; border-radius: 14px; }
+  body.app .a-nav__space .a-nav__rail-label { display: none; }
+  body.app .a-nav__space[aria-current="page"] .a-space-tile { box-shadow: 0 0 0 2px var(--a-surface), 0 0 0 4px color-mix(in srgb, var(--a-space) 70%, transparent); }
+  body.app .a-nav__space .a-badge--dot { position: absolute; top: 6px; right: 6px; }
+  body.app .a-nav__spacer { flex: 1; }
+  /* Create: on a wide screen it lives in the rail / sidebar, as an ember action. */
+  body.app .a-nav__create { display: flex; color: var(--a-accent-ink); }
+  body.app .a-nav__create .a-nav__create-disc {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--a-accent);
+    color: var(--a-on-accent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--a-on-accent) 28%, transparent), 0 6px 14px -6px color-mix(in srgb, var(--a-accent) 80%, transparent);
+  }
+  @media (hover: hover) {
+    body.app .a-nav__item:hover:not([aria-current="page"]) { background: color-mix(in srgb, var(--a-ink) 6%, transparent); color: var(--a-ink); }
+  }
+}
+
+@media (min-width: 1024px) {
+  body.app .a-shell { grid-template-columns: var(--a-sidebar-w) minmax(0, 1fr); }
+  body.app .a-nav {
+    align-items: stretch;
+    gap: 2px;
+    padding: calc(var(--a-safe-top) + var(--a-s-6)) var(--a-s-3) calc(var(--a-safe-bottom) + var(--a-s-4));
+  }
+  body.app .a-nav .a-wordmark { display: inline-flex; margin: 0 var(--a-s-3) var(--a-s-6); align-self: flex-start; }
+  body.app .a-nav .a-nav__label,
+  body.app .a-nav .a-overline,
+  body.app .a-nav .a-nav__count { display: block; }
+  body.app .a-nav .a-overline { margin: var(--a-s-6) var(--a-s-3) var(--a-s-2); }
+  body.app .a-nav__divider { display: none; }
+
+  body.app .a-nav__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--a-s-3);
+    width: auto;
+    min-height: 44px;
+    padding: 0 var(--a-s-3);
+    border-radius: var(--a-r-sm);
+    color: var(--a-ink-2);
+    font-size: var(--a-text-body);
+    line-height: var(--a-lh-body);
+    font-weight: var(--a-weight-medium);
+    letter-spacing: var(--a-tracking-tight);
+    text-align: left;
+  }
+  body.app .a-nav__item .a-nav__rail-label { display: none; }
+  body.app .a-nav__item[aria-current="page"] { font-weight: var(--a-weight-semibold); }
+  body.app .a-nav__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  body.app .a-nav__item .a-badge { position: static; box-shadow: none; }
+  body.app .a-nav__spaces { align-items: stretch; gap: 2px; }
+  body.app .a-nav__space { min-height: 44px; }
+  body.app .a-nav__space .a-space-tile { width: 28px; height: 28px; font-size: 16px; border-radius: 9px; }
+  body.app .a-nav__space[aria-current="page"] .a-space-tile { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-space) 40%, transparent); }
+  body.app .a-nav__space .a-badge--dot { position: static; }
+  body.app .a-nav__create { margin: var(--a-s-1) 0 var(--a-s-2); font-weight: var(--a-weight-semibold); }
+  body.app .a-nav__create .a-nav__create-disc { width: 28px; height: 28px; }
+  body.app .a-nav__account {
+    display: flex;
+    align-items: center;
+    gap: var(--a-s-3);
+    min-height: 44px;
+    padding: 0 var(--a-s-3);
+    margin-top: var(--a-s-2);
+    color: var(--a-ink-3);
+    font-size: var(--a-text-small);
+    font-weight: var(--a-weight-medium);
+  }
+  body.app .a-nav__account .a-avatar { background: var(--a-surface); }
+}
+
+/* ---------------------------------------------------------------------------------------------
+ * Connection banner slot: under the header area, pushes content down gently.
+ * ------------------------------------------------------------------------------------------- */
+body.app .a-banner-slot {
+  position: sticky;
+  top: 0;
+  z-index: calc(var(--a-z-header) + 1);
+}
+body.app .a-banner-slot:empty { display: none; }
+body.app .a-banner-slot .a-banner { padding-top: max(var(--a-s-1), var(--a-safe-top)); }
+/* In a chat the banner sits under the header, so Back stays reachable. */
+body.app.is-chat .a-banner-slot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: calc(var(--a-header-h) + var(--a-safe-top));
+}
+body.app.is-chat .a-banner-slot .a-banner { padding-top: var(--a-s-1); }
+@media (min-width: 700px) {
+  body.app.is-chat .a-banner-slot { left: var(--a-rail-w); }
+}
+@media (min-width: 1024px) {
+  body.app.is-chat .a-banner-slot { left: var(--a-sidebar-w); }
+}
+
+/* =============================================================================================
+ * Screens owned by the shell: Home and Chats. (Space and Chat base layout stay here too, as the
+ * views were first built on them; css/space.css and css/teammate.css dress them further.)
+ * =========================================================================================== */
+
+/* List entrance: rise with the spring, 45ms apart, first six only. */
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-stagger > * {
+    animation: a-rise var(--a-dur-spring) var(--a-ease-spring) both;
+    animation-delay: calc(min(var(--i, 0), 5) * var(--a-stagger));
+  }
+}
+
+/* ---- Home ---- */
+body.app .a-home { padding-bottom: var(--a-s-6); }
+body.app .a-home__hello { display: flex; flex-direction: column; gap: var(--a-s-3); max-width: var(--a-read-w); }
+body.app .a-home__date { margin-bottom: calc(-1 * var(--a-s-1)); }
+body.app .a-greeting em { font-style: italic; color: color-mix(in oklab, var(--a-ink) 82%, var(--a-accent)); }
+body.app .a-home__summary { max-width: 30em; font-size: var(--a-text-title-3); line-height: 1.55rem; color: var(--a-ink-2); }
+body.app .a-home__summary b { color: var(--a-ink); font-weight: var(--a-weight-semibold); }
+body.app .a-home__inbox { max-width: var(--a-read-w); }
+body.app .a-home__cards,
+body.app .a-home__skeleton { display: flex; flex-direction: column; gap: var(--a-s-3); }
+body.app .a-home__needs > .a-btn { margin-top: var(--a-s-2); }
+body.app .a-home__caught-up {
+  display: flex;
+  align-items: center;
+  gap: var(--a-s-3);
+  color: var(--a-ink-2);
+  font-size: var(--a-text-callout);
+  line-height: var(--a-lh-callout);
+}
+body.app .a-home__caught-up .a-home__check {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--a-moss-soft);
+  color: var(--a-moss-on-soft);
+  flex: none;
+}
+
+/* Happening now: a strip of glass chips, working teammates and a running meeting. */
+body.app .a-now {
+  display: flex;
+  gap: var(--a-s-2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  margin: 0 calc(-1 * var(--a-gutter));
+  padding: 6px var(--a-gutter) 10px;
+  scroll-padding-inline: var(--a-gutter);
+}
+body.app .a-now::-webkit-scrollbar { display: none; }
+body.app .a-now__chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--a-s-3);
+  max-width: 260px;
+  min-height: 60px;
+  padding: var(--a-s-2) var(--a-s-4) var(--a-s-2) var(--a-s-2);
+  border-radius: var(--a-r-pill);
+  background: var(--a-glass);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), inset 0 1px 0 var(--a-glass-highlight), var(--a-shadow-1);
+  color: var(--a-ink);
+  text-decoration: none;
+  scroll-snap-align: start;
+  transition: transform var(--a-dur-spring) var(--a-ease-spring);
+  --a-avatar-gap: var(--a-surface);
+}
+body.app .a-now__chip:active { transform: scale(var(--a-press-scale)); transition-duration: var(--a-dur-instant); }
+body.app .a-now__chip .a-avatar { margin: 4px; }
+body.app .a-now__text { display: flex; flex-direction: column; min-width: 0; }
+body.app .a-now__name { font-size: var(--a-text-callout); line-height: 1.2rem; font-weight: var(--a-weight-semibold); letter-spacing: var(--a-tracking-tight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.app .a-now__line { font-size: var(--a-text-caption); line-height: var(--a-lh-caption); color: var(--a-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The meeting chip: aqua, with its round as a tiny progress ring. */
+body.app .a-now__chip--meeting {
+  max-width: 300px;
+  border-radius: var(--a-r-lg);
+  padding-left: var(--a-s-3);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--a-status-working) 20%, transparent), transparent 60%),
+    var(--a-glass);
+}
+body.app .a-now__mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+  color: var(--a-lake-on-soft);
+  background: conic-gradient(var(--a-status-working) calc(var(--a-p, 0) * 1turn), color-mix(in srgb, var(--a-status-working) 18%, transparent) 0);
+}
+body.app .a-now__mark::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--a-surface); }
+body.app .a-now__mark > * { position: relative; z-index: 1; }
+body.app .a-now__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--a-lake-on-soft);
+  font-weight: var(--a-weight-semibold);
+}
+body.app .a-now__live::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--a-status-working);
+  box-shadow: 0 0 6px var(--a-status-working-glow);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-now__live::before { animation: a-breathe 2s ease-in-out infinite; }
+}
+
+/* Spaces as a bento: each card tinted by its space, a live glow when someone's at work. */
+body.app .a-home__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: dense;
+  gap: var(--a-s-3);
+}
+@media (max-width: 359px) {
+  body.app .a-home__grid { grid-template-columns: 1fr; }
+}
+@media (min-width: 700px) {
+  body.app .a-home__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--a-s-4); }
+}
+@media (min-width: 1200px) {
+  body.app .a-home__grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+body.app .a-card.a-bento {
+  --a-glow: color-mix(in srgb, var(--a-space) 34%, transparent);
+  min-height: 176px;
+  padding: var(--a-s-4);
+  background:
+    radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--a-space) calc(var(--a-tint) + 12%), transparent), transparent 66%),
+    radial-gradient(100% 80% at 0% 100%, color-mix(in srgb, var(--a-space) 10%, transparent), transparent 72%),
+    var(--a-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-space) 20%, transparent), var(--a-shadow-1), inset 0 1px 0 color-mix(in srgb, var(--a-space) 25%, var(--a-glass-highlight));
+}
+body.app .a-bento__head .a-avatar-stack { margin-top: 6px; }
+body.app .a-card.a-bento.is-hero,
+body.app .a-card.a-bento.is-tail-wide { grid-column: span 2; }
+body.app .a-card.a-bento.is-hero { min-height: 200px; }
+@media (max-width: 359px) {
+  body.app .a-card.a-bento.is-hero,
+  body.app .a-card.a-bento.is-tail-wide { grid-column: auto; }
+}
+@media (min-width: 700px) {
+  body.app .a-card.a-bento.is-tail-wide { grid-column: auto; }
+  body.app .a-card.a-bento.is-hero { grid-row: span 2; min-height: 100%; }
+}
+body.app .a-card.a-bento .a-space-card__tile { width: 44px; height: 44px; border-radius: 14px; font-size: 24px; }
+body.app .a-card.a-bento.is-hero .a-space-card__tile { width: 52px; height: 52px; border-radius: 16px; font-size: 28px; }
+body.app .a-card.a-bento .a-space-card__name { font-size: 1.625rem; line-height: 1.75rem; }
+body.app .a-card.a-bento.is-hero .a-space-card__name { font-size: 2.125rem; line-height: 2.25rem; }
+body.app .a-bento__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--a-s-2); }
+body.app .a-bento__arrow {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--a-ink-2);
+  background: color-mix(in srgb, var(--a-surface) 60%, transparent);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line);
+  transition: transform var(--a-dur-spring) var(--a-ease-spring);
+}
+@media (hover: hover) {
+  body.app .a-card.a-bento:hover .a-bento__arrow { transform: translate(2px, -2px); }
+}
+body.app .a-bento__foot { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--a-s-2); margin-top: auto; min-height: 28px; }
+body.app .a-bento__count { font-size: var(--a-text-caption); line-height: var(--a-lh-caption); color: var(--a-ink-3); font-variant-numeric: tabular-nums; }
+body.app .a-space-card__status { display: inline-flex; align-items: center; gap: 6px; }
+body.app .a-space-card__status.is-working { color: var(--a-lake-on-soft); font-weight: var(--a-weight-semibold); }
+body.app .a-space-card__status.is-working::before,
+body.app .a-space-card__status.is-needs::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--a-status-working);
+  box-shadow: 0 0 8px var(--a-status-working-glow);
+}
+body.app .a-space-card__status.is-needs::before { background: var(--a-accent); box-shadow: 0 0 8px color-mix(in srgb, var(--a-accent) 60%, transparent); }
+/* Live: someone's working here, so the card breathes a halo of the space's color. */
+body.app .a-card.a-bento.is-live::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--a-status-working) 30%, transparent), 0 10px 40px -8px var(--a-glow);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-card.a-bento.is-live::after { animation: a-breathe var(--a-dur-breathe) ease-in-out infinite; }
+}
+body.app .a-card.a-bento.is-needs { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--a-accent) 30%, transparent), var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight); }
+
+/* Today: what the office has spent and how much of the plan is left. */
+body.app .a-today { display: grid; gap: var(--a-s-4); }
+body.app .a-today__top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--a-s-3); flex-wrap: wrap; }
+body.app .a-today__spent { font-family: var(--a-font-display); font-size: 2.5rem; line-height: 2.5rem; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+body.app .a-today__of { color: var(--a-ink-3); font-size: var(--a-text-callout); }
+body.app .a-today__rows { display: grid; gap: var(--a-s-3); }
+body.app .a-today__row { display: grid; gap: 6px; }
+body.app .a-today__label { display: flex; justify-content: space-between; gap: var(--a-s-2); font-size: var(--a-text-caption); line-height: var(--a-lh-caption); color: var(--a-ink-3); font-weight: var(--a-weight-medium); }
+body.app .a-today__label b { color: var(--a-ink); font-weight: var(--a-weight-semibold); font-variant-numeric: tabular-nums; }
+
+/* ---- Create (the tab bar's ✚) ---- */
+body.app .a-create__for { display: flex; align-items: center; gap: var(--a-s-3); margin-bottom: var(--a-s-4); min-width: 0; }
+body.app .a-create__for > .a-overline { flex: none; }
+body.app .a-create__for > .a-pills {
+  flex: 1;
+  min-width: 0;
+  margin-left: 0;
+  padding-left: 2px;
+  scroll-padding-inline: 2px;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - var(--a-gutter)), transparent);
+  mask-image: linear-gradient(90deg, #000 calc(100% - var(--a-gutter)), transparent);
+}
+body.app .a-actions__sub { margin-bottom: var(--a-s-4); }
+
+/* ---- Chats ---- */
+body.app .a-chats__head { display: flex; flex-direction: column; gap: var(--a-s-1); }
+body.app .a-chats__filter:empty { display: none; }
+body.app .a-chats > * + * { margin-top: var(--a-s-5); }
+body.app .a-chat-row__space {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: -1px;
+  color: var(--a-ink-3);
+}
+body.app .a-chat-row__space::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--a-space, var(--a-stone));
+}
+body.app .a-chat-row .a-row__line .a-badge--dot { flex: none; box-shadow: 0 0 8px color-mix(in srgb, var(--a-accent) 60%, transparent); }
+body.app .a-chat-row.is-needs .a-row__title { color: var(--a-ink); }
+body.app .a-chat-row.is-needs .a-row__meta { color: var(--a-accent-ink); font-weight: var(--a-weight-semibold); }
+body.app .a-chats__group-label { margin: var(--a-s-2) var(--a-s-4) var(--a-s-2); }
+body.app .a-chats__list > * + * { margin-top: var(--a-s-5); }
+
+/* ---- Space ---- */
+body.app .a-sentinel { height: 0; }
+body.app .a-space {
+  display: grid;
+  grid-template-areas: "title" "seg" "actions" "panel";
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--a-s-4);
+  padding-top: var(--a-s-2);
+}
+body.app .a-space > * + * { margin-top: 0; }
+body.app .a-space__title { grid-area: title; display: flex; flex-direction: column; gap: var(--a-s-1); }
+body.app .a-space__emoji { font-size: 0.8em; }
+body.app .a-space__seg { grid-area: seg; }
+body.app .a-space__actions {
+  grid-area: actions;
+  display: flex;
+  gap: var(--a-s-2);
+  overflow-x: auto;
+  padding: 4px;
+  margin: -4px;
+  scrollbar-width: none;
+}
+body.app .a-space__actions .a-btn { flex: none; }
+body.app .a-space__panel { grid-area: panel; min-width: 0; margin-top: var(--a-s-2); }
+@media (prefers-reduced-motion: no-preference) {
+  body.app .a-space__panel.is-fade { animation: a-fade-in var(--a-dur-base) var(--a-ease-out); }
+}
+@media (min-width: 1024px) {
+  body.app .a-space {
+    grid-template-areas: "title actions" "seg seg" "panel panel";
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+  body.app .a-space__seg { max-width: 560px; }
+}
+
+/* Teammate rows; on desktop they become a two-column grid of cards. */
+body.app .a-team-list .a-row { align-items: start; }
+body.app .a-team-list .a-row__trail { align-self: center; }
+/* A long name ("Customer Success & Onboarding Lead") wraps rather than losing its end beside the Wake button. */
+body.app .a-team-list .a-row__title { white-space: normal; text-wrap: balance; }
+body.app .a-row__role {
+  margin-top: -2px;
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-medium);
+  color: var(--a-ink-3);
+}
+body.app .a-row__line + .a-row__sub { margin-top: 2px; }
+body.app .a-row-wrap > .a-row.has-action { padding-right: 112px; }
+body.app .a-row-wrap > .a-row__action {
+  position: absolute;
+  z-index: 1;
+  right: var(--a-s-4);
+  top: 50%;
+  transform: translateY(-50%);
+}
+body.app .a-row-wrap > .a-row__action:active { transform: translateY(-50%) scale(var(--a-press-scale)); }
+/* The smallest phones: Wake keeps its icon and its name for screen readers, and gives the name room. */
+@media (max-width: 359px) {
+  body.app .a-row-wrap > .a-row.has-action { padding-right: 68px; }
+  body.app .a-row-wrap > .a-row__action { width: 44px; padding: 0; justify-content: center; }
+  body.app .a-row-wrap > .a-row__action .a-btn__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (min-width: 1024px) {
+  body.app .a-team-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--a-s-4);
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+  body.app .a-team-list > .a-row-wrap {
+    border-radius: var(--a-r-lg);
+    background: var(--a-surface);
+    box-shadow: var(--a-shadow-1), inset 0 1px 0 var(--a-glass-highlight);
+    overflow: hidden;
+  }
+  body.app .a-team-list > .a-row-wrap > .a-row { padding: var(--a-s-4); min-height: 96px; }
+  body.app .a-team-list > .a-row-wrap > .a-row.has-action { padding-right: 112px; }
+  body.app .a-team-list .a-row-wrap + .a-row-wrap > .a-row::before { display: none; }
+}
+@media (min-width: 1024px) and (hover: hover) {
+  body.app .a-team-list > .a-row-wrap:hover { box-shadow: var(--a-shadow-2), inset 0 1px 0 var(--a-glass-highlight); }
+}
+
+/* ---- Chat ---- */
+body.app .a-chat {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100vh;
+  height: 100dvh;
+  background: transparent;
+}
+body.app .a-chat__list { display: none; }
+body.app .a-chat__main {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+body.app .a-chat__header { position: relative; grid-template-columns: auto minmax(0, 1fr) auto; }
+body.app .a-chat__header .a-back > span { display: none; }
+body.app .a-chat__header .a-back { min-width: 44px; justify-content: center; }
+body.app .a-chat__who { display: flex; align-items: center; gap: var(--a-s-3); min-width: 0; --a-avatar-gap: var(--a-bg); }
+body.app .a-chat__who-text { display: flex; flex-direction: column; min-width: 0; }
+body.app .a-chat__title {
+  font-family: var(--a-font-ui);
+  font-size: var(--a-text-title-3);
+  line-height: 1.3;
+  font-weight: var(--a-weight-semibold);
+  letter-spacing: var(--a-tracking-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.app .a-chat__role { font-weight: var(--a-weight-regular); color: var(--a-ink-3); }
+body.app .a-chat__status {
+  font-size: var(--a-text-caption);
+  line-height: var(--a-lh-caption);
+  font-weight: var(--a-weight-medium);
+  color: var(--a-ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.app .a-chat__status.is-needs { color: var(--a-accent-ink); font-weight: var(--a-weight-semibold); }
+body.app .a-chat__log {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 max(var(--a-s-4), var(--a-safe-right)) var(--a-s-4) max(var(--a-s-4), var(--a-safe-left));
+}
+body.app .a-chat__log:focus-visible { outline-offset: -4px; }
+body.app .a-chat__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  max-width: var(--a-read-w);
+  min-height: 100%;
+  margin: 0 auto;
+}
+body.app .a-chat__stream { display: flex; flex-direction: column; }
+body.app .a-chat__tail { display: flex; flex-direction: column; align-items: flex-start; }
+body.app .a-chat__tail:empty { display: none; }
+body.app .a-chat__tail > .a-ask { align-self: stretch; }
+body.app .a-chat__skeleton { display: flex; flex-direction: column; gap: var(--a-s-3); padding-top: var(--a-s-6); }
+body.app .a-chat__skeleton > :nth-child(2) { align-self: flex-end; }
+body.app .a-chat__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--a-s-2);
+  margin: auto;
+  padding: var(--a-s-12) var(--a-s-4);
+  text-align: center;
+  --a-avatar-gap: var(--a-bg);
+}
+body.app .a-chat__intro .a-avatar { margin-bottom: var(--a-s-2); }
+/* "New message ↓": floats just above the composer (the grid's last row). */
+body.app .a-chat__pill {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 84px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 var(--a-s-4);
+  border: 0;
+  border-radius: var(--a-r-pill);
+  background: var(--a-glass-strong);
+  -webkit-backdrop-filter: var(--a-glass-blur);
+  backdrop-filter: var(--a-glass-blur);
+  color: var(--a-ink);
+  box-shadow: inset 0 0 0 1px var(--a-glass-line), var(--a-shadow-float);
+  font-size: var(--a-text-small);
+  font-weight: var(--a-weight-semibold);
+  transform: translateX(-50%);
+}
+body.app .a-chat__pill::before { content: ""; position: absolute; inset: -4px; }
+
+@media (min-width: 700px) {
+  body.app .a-chat { position: sticky; top: 0; inset: auto; }
+  body.app .a-chat__header .a-back > span { display: inline; }
+  body.app .a-chat__log { padding-left: var(--a-s-6); padding-right: var(--a-s-6); }
+  body.app .a-composer { padding-left: var(--a-s-6); padding-right: var(--a-s-6); }
+  body.app .a-composer > * { width: 100%; max-width: var(--a-read-w); margin-left: auto; margin-right: auto; }
+}
+@media (min-width: 1200px) {
+  body.app .a-chat { grid-template-columns: 320px minmax(0, 1fr); }
+  body.app .a-chat__list {
+    display: block;
+    overflow-y: auto;
+    padding: var(--a-s-6) var(--a-s-3);
+    box-shadow: 1px 0 0 var(--a-glass-line);
+  }
+  body.app .a-chat__list-title { margin: 0 var(--a-s-2) var(--a-s-4); font-size: var(--a-text-title-2); line-height: var(--a-lh-title-2); }
+  body.app .a-chat__list .a-group { background: transparent; box-shadow: none; }
+  body.app .a-chat__list .a-row { min-height: 64px; border-radius: var(--a-r-md); --a-avatar-gap: var(--a-bg); }
+  body.app .a-chat__list .a-row::before { display: none; }
+  body.app .a-chat__header .a-back { display: none; }
+}
