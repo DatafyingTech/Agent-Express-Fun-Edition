@@ -1,4 +1,4 @@
-/* Hearth: space screens (owned by the space agent, see docs/app/REDESIGN.md). Tokens only (--a-*), no raw hex.
+/* Agent Express (/app): space screens (owned by the space agent, see docs/app/REDESIGN.md). Tokens only (--a-*), no raw hex.
  *
  * The frame of a space (its title, the glass pill row, the Team part), Add teammates (the hire sheet),
  * Notes and Reports, and the document viewer they share. New tokens from the design system

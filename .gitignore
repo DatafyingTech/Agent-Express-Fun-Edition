@@ -11,6 +11,6 @@ logs/
 # The release export's trees (release/export.mjs).
 release/out/
 release/verify/
-# Each install keeps its settings, logs and state here (installer/hearth.mjs).
-.hearth/
+# Each install keeps its settings, logs and state here (agent-express.mjs).
+.agent-express/
 .upgrade/

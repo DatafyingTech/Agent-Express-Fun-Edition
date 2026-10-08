@@ -1,4 +1,4 @@
-# Hearth — design system for the Agent Office companion app (`/app`)
+# Agent Express — design system for the Agent Office companion app (`/app`)
 
 Owner: Design Research / Design System. Tokens: `src/client/app/tokens.css` (every value below exists
 there as an `--a-*` custom property; component CSS uses tokens, never raw hex).
@@ -10,7 +10,7 @@ and plain CSS. No React, no Tailwind, no component library.
 ## 0. The one-paragraph brief
 
 Sam wants to text her household helpers, see who needs her, glance at what the team knows, and
-open the budget. She does not want a game, a dashboard, or a terminal. **Hearth** is a calm, warm,
+open the budget. She does not want a game, a dashboard, or a terminal. **Agent Express** is a calm, warm,
 grown-up messaging app over the same office: oat-paper backgrounds, ink text, one warm clay accent
 that always means *"your move"*, a soft serif for headings and a clear sans for everything else.
 Each screen has one obvious thing to do. Status is told in words first, color second. Motion is
@@ -20,16 +20,16 @@ felt, not watched.
 
 ## 1. Name
 
-**Hearth** (proposed). The warm center of a home, where the household gathers; short, calm, easy to
-say, fits "Home Life" and "Personal Finance" without sounding like software. It pairs with the
-old app's warmth (the 3D office's orange accent becomes Hearth's deeper clay).
+**Agent Express**. Your team of Claude Code agents, a message away: quick to reach, easy to say, and
+it names what the app is for without sounding like a control panel. The look keeps the old app's
+warmth (the 3D office's orange accent becomes the app's deeper clay). The same team as a 3D office
+game is **Agent Express (Fun Edition)**.
 
-- Wordmark: "Hearth" set in Fraunces 600, `SOFT` 100, tracking -0.02em, ink color. A small
-  clay dot after it is the only logo mark: `Hearth·` (the dot is `--a-clay`, 0.28em circle, baseline).
-- Page `<title>`: `Hearth`, or `Meal Planner · Hearth` on a chat.
-- Alternates if the owner wants another: **Porch**, **Nook**, **Kin**.
-- The 3D office stays "Agent Office". Hearth never shows the words office, floor, worker, PTY,
-  worktree, session, terminal, prompt, agent, model, token.
+- Wordmark: "Agent Express" set in Fraunces 600, `SOFT` 100, tracking -0.02em, ink color. A small
+  clay dot after it is the only logo mark: `Agent Express·` (the dot is `--a-clay`, 0.28em circle, baseline).
+- Page `<title>`: `Agent Express`, or `Meal Planner · Agent Express` on a chat.
+- The 3D office stays "Agent Office" (or the Fun Edition). Apart from its own name, the app never shows
+  the words office, floor, worker, PTY, worktree, session, terminal, prompt, agent, model, token.
 
 ## 2. Personality
 
@@ -40,7 +40,7 @@ old app's warmth (the 3D office's orange accent becomes Hearth's deeper clay).
 | Plain words, full sentences | Status codes, jargon, ALL CAPS |
 | Generous space, few elements | Dense toolbars, every action visible at once |
 
-**Signature elements** (the things that make it Hearth and not a template):
+**Signature elements** (the things that make it Agent Express and not a template):
 1. **The greeting.** Home opens with a Fraunces line — "Good evening, Sam." — and one written
    sentence that summarizes the house: "Meal Planner needs you. Everyone else is humming along."
 2. **Clay means your move.** The single accent is used only for: primary buttons, Sam's own chat
@@ -125,7 +125,7 @@ for chat/notes, 1040 px for grids. Chat keeps the rail.
 
 ```
 ┌───────────────┬─────────────────────────────────────────────┐
-│ Hearth·       │                                             │
+│ Agent Express·│                                             │
 │               │   Good evening, Sam.                     │
 │ ⌂ Home        │   Meal Planner needs you. Everyone else     │
 │ 💬 Chats   (2) │   is humming along.                         │
@@ -452,12 +452,12 @@ Inset grouped lists (iOS Settings style), 680 px max.
 │ │ Open the 3D office     ↗ │ │
 │ │ Sign out                 │ │  danger-colored text, confirms in a dialog
 │ └──────────────────────────┘ │
-│ Hearth                       │  caption ink-3 footer (optional)
+│ Agent Express                │  caption ink-3 footer (optional)
 ```
 
 - Theme choice writes `<html data-theme>` and `localStorage["hearth.theme"]` and updates
   `<meta name="theme-color">` from `--a-theme-color`.
-- Sign-out confirm: title "Sign out of Hearth?", body "Your teammates keep working. You can sign back
+- Sign-out confirm: title "Sign out of Agent Express?", body "Your teammates keep working. You can sign back
   in any time.", buttons "Sign out" (danger) / "Cancel".
 
 ---
@@ -807,7 +807,7 @@ inner radius = outer radius − padding (concentric).
 - Source: **Lucide** (ISC license; lucide.dev). Copy the inner SVG markup for only the icons we use into
   `src/client/app/icons.ts` as `Record<IconName, string>` and render with a tiny `icon(name, size)`
   helper. No icon font, no runtime dependency.
-- The set (Hearth name → Lucide name): home `house` · chats `message-circle` · settings `settings` ·
+- The set (the app's name → Lucide name): home `house` · chats `message-circle` · settings `settings` ·
   back `chevron-left` · forward `chevron-right` · add `plus` · attach `paperclip` · photo `image` ·
   file `file-text` · send `arrow-up` · more `ellipsis` · close `x` · check `check` · light `sun` ·
   dark `moon` · auto `sun-moon` · notes `book-open` · reports `chart-column` · team `users` · group chat
@@ -851,9 +851,9 @@ loop per screen at most (the rings). **Reduced motion:** tokens already zero out
 
 ## 9. Microcopy
 
-**Glossary (system word → Hearth word).** These system words must never reach the screen:
+**Glossary (system word → the app's word).** These system words must never reach the screen:
 
-| System | Hearth |
+| System | In the app |
 |---|---|
 | floor / project | space |
 | worker / agent / desk | teammate |
@@ -948,7 +948,7 @@ space in "1.2&nbsp;MB".
     stays up for the next message).
   - Tapping the log while the keyboard is up does not dismiss it; a downward scroll of the log
     (`touchmove` > 24 px) does (`textarea.blur()`), like Messages.
-- Add to Home Screen: provide a web manifest (`name: "Hearth"`, `display: "standalone"`,
+- Add to Home Screen: provide a web manifest (`name: "Agent Express"`, `display: "standalone"`,
   `background_color`/`theme_color` #F6F3EE) and a 180 px `apple-touch-icon` (clay dot on oat) so
   Sam can launch it like an app; standalone mode makes the safe-area handling above essential.
 - Hover styles only under `@media (hover: hover)` (no sticky hover on touch).

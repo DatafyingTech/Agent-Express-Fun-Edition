@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Hearth installer and helper for macOS and Linux.
+# The Agent Express installer and helper for macOS and Linux, for both editions: Agent Express and
+# Agent Express (Fun Edition).
 #
-# One line (it downloads Hearth, then installs it):
+# One line (it downloads the app, then installs it):
 #
-#   curl -fsSL https://raw.githubusercontent.com/DatafyingTech/Hearth-HQ/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/DatafyingTech/Agent-Express-Fun-Edition/main/install.sh | bash
 #
 # With options:   curl -fsSL .../install.sh | bash -s -- --port 4700 --no-autostart
 # From a copy:    ./install.sh [action] [options]
@@ -13,20 +14,24 @@
 #      missing (Homebrew on macOS; apt, dnf, pacman or zypper on Linux; nvm for Node.js otherwise)
 #   2. checks that Claude Code is signed in, and offers to sign in
 #   3. installs the app's packages (npm ci) and builds it (npm run build)
-#   4. creates your workspace (default ~/Hearth) with a starter CLAUDE.md and memory/, as the first
-#      floor, and tells Claude Code to trust that folder
+#   4. creates your workspace (default ~/AgentExpress, or ~/AgentExpressFun for the Fun Edition)
+#      with a starter CLAUDE.md and memory/, as the first floor, and tells Claude Code to trust that
+#      folder
 #   5. sets the password your phone signs in with (yours, or a generated one it shows you)
-#   6. optionally starts Hearth when you log in (launchd on macOS, systemd --user on Linux)
-#   7. starts Hearth, brings Tailscale up and shares the app on your tailnet with `tailscale serve`
+#   6. optionally starts the app when you log in (launchd on macOS, systemd --user on Linux)
+#   7. starts the app, brings Tailscale up and shares the app on your tailnet with `tailscale serve`
 #   8. prints the address to open on your phone
 #
 # Actions: install (default), start, stop, restart, status, doctor, update, password, uninstall
 #
 # Options:
-#   --edition hearth|hq   which app this is (normally detected; hq = Hearth HQ, the 3D office)
-#   --port <n>            port on this computer (default 4600 for Hearth, 4610 for Hearth HQ)
-#   --workspace <dir>     your workspace folder (default ~/Hearth or ~/HearthHQ)
-#   --install-dir <dir>   where the one-line install puts the app (default ~/.local/share/hearth)
+#   --edition express|fun which app this is (normally detected; fun = Agent Express (Fun Edition),
+#                         the 3D office)
+#   --port <n>            port on this computer (default 4600 for Agent Express, 4610 for the Fun
+#                         Edition)
+#   --workspace <dir>     your workspace folder (default ~/AgentExpress or ~/AgentExpressFun)
+#   --install-dir <dir>   where the one-line install puts the app (default
+#                         ~/.local/share/agent-express or ~/.local/share/agent-express-fun)
 #   --no-tailscale        don't install, start or configure Tailscale (this computer only)
 #   --no-autostart        don't start at login (and don't ask); --autostart: do, without asking
 #   --no-start            set everything up but don't start it
@@ -36,9 +41,13 @@
 #   --dry-run             report what it would do, change nothing
 #   --force               reinstall packages and rebuild even when they look up to date
 #
-# Environment: HEARTH_EDITION, HEARTH_PORT, HEARTH_WORKSPACE, HEARTH_INSTALL_DIR, HEARTH_YES=1,
-# HEARTH_DRY_RUN=1, HEARTH_NO_TAILSCALE=1, HEARTH_NO_AUTOSTART=1, and HEARTH_PASSWORD (the sign-in
-# password, instead of being asked).
+# Environment: AGENT_EXPRESS_EDITION, AGENT_EXPRESS_PORT, AGENT_EXPRESS_WORKSPACE,
+# AGENT_EXPRESS_INSTALL_DIR, AGENT_EXPRESS_YES=1, AGENT_EXPRESS_DRY_RUN=1,
+# AGENT_EXPRESS_NO_TAILSCALE=1, AGENT_EXPRESS_NO_AUTOSTART=1, and AGENT_EXPRESS_PASSWORD (the
+# sign-in password, instead of being asked).
+#
+# The apps were first called Hearth and Hearth HQ. Their edition ids (hearth, hq), the HEARTH_*
+# variables and an install's old .hearth/ folder all still work.
 #
 # Everything is in functions and the last line runs main and exits on the same line: bash reads a
 # script bit by bit as it runs it, and `update` rewrites this file while it runs.
@@ -47,15 +56,18 @@ set -euo pipefail
 
 # The export fills these in for each repo. Left as they are (a development checkout), the edition is
 # worked out from package.json and the git remote.
-BAKED_EDITION='hq'
-BAKED_REPO='DatafyingTech/Hearth-HQ'
+BAKED_EDITION='fun'
+BAKED_REPO='DatafyingTech/Agent-Express-Fun-Edition'
+
+# AGENT_EXPRESS_<name> from the environment, or HEARTH_<name>, its name before the rename.
+env_var() { local a="AGENT_EXPRESS_$1" b="HEARTH_$1"; printf '%s' "${!a:-${!b:-}}"; }
 
 ORIG_ARGS=("$@")
 ACTION=install
-EDITION="${HEARTH_EDITION:-}"
-PORT="${HEARTH_PORT:-}"
-WORKSPACE="${HEARTH_WORKSPACE:-}"
-INSTALL_DIR="${HEARTH_INSTALL_DIR:-}"
+EDITION="$(env_var EDITION)"
+PORT="$(env_var PORT)"
+WORKSPACE="$(env_var WORKSPACE)"
+INSTALL_DIR="$(env_var INSTALL_DIR)"
 NO_TS=0
 AUTOSTART_FLAG=""
 NO_START=0
@@ -67,10 +79,15 @@ FORCE=0
 REPO_ARG=""
 
 truthy() { [ -n "${1:-}" ] && [ "$1" != 0 ] && [ "$1" != false ]; }
-truthy "${HEARTH_YES:-}" && YES=1
-truthy "${HEARTH_DRY_RUN:-}" && DRY=1
-truthy "${HEARTH_NO_TAILSCALE:-}" && NO_TS=1
-truthy "${HEARTH_NO_AUTOSTART:-}" && AUTOSTART_FLAG=0
+truthy "$(env_var YES)" && YES=1
+truthy "$(env_var DRY_RUN)" && DRY=1
+truthy "$(env_var NO_TAILSCALE)" && NO_TS=1
+truthy "$(env_var NO_AUTOSTART)" && AUTOSTART_FLAG=0
+
+# Each install keeps its settings, logs and state in this folder of the app (an install from before
+# the rename has it as .hearth, which move_old_state renames).
+STATE_NAME=.agent-express
+OLD_STATE_NAME=.hearth
 
 # ------------------------------------------------------------------ output and questions
 if [ -t 1 ]; then C_CYAN=$'\033[1;36m' C_GREEN=$'\033[32m' C_YELLOW=$'\033[33m' C_RED=$'\033[31m' C_MAG=$'\033[35m' C_DIM=$'\033[2m' C_BOLD=$'\033[1m' C_OFF=$'\033[0m'
@@ -111,12 +128,12 @@ change() { # description command...
 }
 
 # ------------------------------------------------------------------ arguments
-usage() { sed -n '2,40p' "${BASH_SOURCE[0]:-install.sh}" 2>/dev/null | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,/^# Everything is in functions/p' "${BASH_SOURCE[0]:-install.sh}" 2>/dev/null | sed '$d' | sed 's/^# \{0,1\}//'; }
 parse_args() {
   while [ $# -gt 0 ]; do
     case "$1" in
       install | start | stop | restart | status | doctor | update | password | uninstall) ACTION="$1" ;;
-      --edition) EDITION="${2:?--edition needs hearth or hq}"; shift ;;
+      --edition) EDITION="${2:?--edition needs express or fun}"; shift ;;
       --port) PORT="${2:?--port needs a number}"; shift ;;
       --workspace) WORKSPACE="${2:?--workspace needs a folder}"; shift ;;
       --install-dir) INSTALL_DIR="${2:?--install-dir needs a folder}"; shift ;;
@@ -188,32 +205,47 @@ _pkg_install() {
 }
 
 # ------------------------------------------------------------------ editions and settings
-E_NAME="" E_PORT="" E_WS="" E_REPO="" E_APPDIR="" E_LABEL="" E_UNIT=""
+E_NAME="" E_PORT="" E_WS="" E_REPO="" E_APPDIR="" E_LABEL="" E_UNIT="" E_OLD_LABEL="" E_OLD_UNIT=""
+# The edition ids from before the rename, still accepted.
+resolve_edition() { case "$1" in hearth) echo express ;; hq) echo fun ;; *) echo "$1" ;; esac; }
 set_edition() {
   case "$1" in
-    hearth) E_NAME="Hearth" E_PORT=4600 E_WS="Hearth" E_REPO="DatafyingTech/Hearth" E_APPDIR="hearth" E_LABEL="tech.datafying.hearth" E_UNIT="hearth.service" ;;
-    hq) E_NAME="Hearth HQ" E_PORT=4610 E_WS="HearthHQ" E_REPO="DatafyingTech/Hearth-HQ" E_APPDIR="hearth-hq" E_LABEL="tech.datafying.hearth-hq" E_UNIT="hearth-hq.service" ;;
-    *) die "--edition is hearth or hq, not $1" ;;
+    express) E_NAME="Agent Express" E_PORT=4600 E_WS="AgentExpress" E_REPO="DatafyingTech/Agent-Express" E_APPDIR="agent-express" E_LABEL="tech.datafying.agent-express" E_UNIT="agent-express.service" E_OLD_LABEL="tech.datafying.hearth" E_OLD_UNIT="hearth.service" ;;
+    fun) E_NAME="Agent Express (Fun Edition)" E_PORT=4610 E_WS="AgentExpressFun" E_REPO="DatafyingTech/Agent-Express-Fun-Edition" E_APPDIR="agent-express-fun" E_LABEL="tech.datafying.agent-express-fun" E_UNIT="agent-express-fun.service" E_OLD_LABEL="tech.datafying.hearth-hq" E_OLD_UNIT="hearth-hq.service" ;;
+    *) die "--edition is express or fun, not $1" ;;
   esac
-  case "$BAKED_REPO" in "{{"*) ;; *) E_REPO="$BAKED_REPO" ;; esac
+  # The repository this copy was exported for (a fork keeps its own), unless it's told to install
+  # the other edition.
+  case "$BAKED_REPO" in "{{"*) ;; *) if [ "$1" = "$(resolve_edition "$BAKED_EDITION")" ]; then E_REPO="$BAKED_REPO"; fi ;; esac
 }
 
 is_checkout() { [ -n "${1:-}" ] && [ -f "$1/package.json" ] && [ -f "$1/src/server/cli.ts" ]; }
 
 detect_edition() {
-  case "$BAKED_EDITION" in "{{"*) ;; *) echo "$BAKED_EDITION"; return ;; esac
+  case "$BAKED_EDITION" in "{{"*) ;; *) resolve_edition "$BAKED_EDITION"; return ;; esac
   local name remote
   name="$(sed -n 's/^ *"name": *"\([^"]*\)".*/\1/p' "$1/package.json" | head -n 1)"
-  case "$name" in *hq*) echo hq; return ;; *hearth*) echo hearth; return ;; esac
+  case "$name" in *agent-express-fun*) echo fun; return ;; *agent-express*) echo express; return ;; esac
   remote="$(git -C "$1" remote get-url origin 2>/dev/null || true)"
-  case "$(printf '%s' "$remote" | tr '[:upper:]' '[:lower:]')" in *hearth-hq*) echo hq; return ;; esac
-  echo hearth
+  case "$(printf '%s' "$remote" | tr '[:upper:]' '[:lower:]')" in *agent-express-fun*) echo fun; return ;; esac
+  echo express
 }
 
 S_EDITION="" S_PORT="" S_WORKSPACE="" S_AGENT="" S_AGENT_ARGS="" S_MAX_WORKERS="" S_TAILSCALE="" S_AUTOSTART="" S_SHORTCUTS="" S_NODE=""
 HAS_SETTINGS=0
+# Renames an install's .hearth folder (from before the rename) to .agent-express.
+move_old_state() {
+  [ -e "$ROOT/$STATE_NAME" ] || [ ! -d "$ROOT/$OLD_STATE_NAME" ] && return 0
+  change "rename the settings folder $ROOT/$OLD_STATE_NAME to $STATE_NAME (the app's new name)" mv "$ROOT/$OLD_STATE_NAME" "$ROOT/$STATE_NAME"
+  [ "$DRY" = 1 ] || ok "settings moved to $ROOT/$STATE_NAME"
+}
+# A dry run leaves an old .hearth folder where it is, and reads it there.
+state_dir() {
+  if [ ! -e "$ROOT/$STATE_NAME" ] && [ -d "$ROOT/$OLD_STATE_NAME" ]; then echo "$ROOT/$OLD_STATE_NAME"; else echo "$ROOT/$STATE_NAME"; fi
+}
 read_settings() {
-  local f="$ROOT/.hearth/settings.env" line key val
+  local f line key val
+  f="$(state_dir)/settings.env"
   [ -f "$f" ] || return 0
   HAS_SETTINGS=1
   while IFS= read -r line || [ -n "$line" ]; do
@@ -227,14 +259,14 @@ read_settings() {
   done <"$f"
 }
 write_settings() {
-  change "save settings to $ROOT/.hearth/settings.env" _write_settings
+  change "save settings to $ROOT/$STATE_NAME/settings.env" _write_settings
 }
 _write_settings() {
-  mkdir -p "$ROOT/.hearth"
+  mkdir -p "$ROOT/$STATE_NAME"
   # The folder ignores itself, so it never shows up in git status or gets committed.
-  printf '*\n' >"$ROOT/.hearth/.gitignore"
+  printf '*\n' >"$ROOT/$STATE_NAME/.gitignore"
   {
-    echo "# Hearth settings, written by the installer. Edit, then run ./stop.sh and ./start.sh."
+    echo "# $E_NAME settings, written by the installer. Edit, then run ./stop.sh and ./start.sh."
     echo "EDITION=$S_EDITION"
     echo "PORT=$S_PORT"
     echo "WORKSPACE=$S_WORKSPACE"
@@ -245,7 +277,7 @@ _write_settings() {
     echo "AUTOSTART=$S_AUTOSTART"
     echo "SHORTCUTS=$S_SHORTCUTS"
     echo "NODE=$S_NODE"
-  } >"$ROOT/.hearth/settings.env"
+  } >"$ROOT/$STATE_NAME/settings.env"
 }
 
 # ------------------------------------------------------------------ bootstrap (no checkout yet)
@@ -253,7 +285,8 @@ _write_settings() {
 # then run that copy's installer with the same options.
 bootstrap() {
   local ed="${EDITION}" dir
-  if [ -z "$ed" ]; then case "$BAKED_EDITION" in "{{"*) ed=hearth ;; *) ed="$BAKED_EDITION" ;; esac; fi
+  if [ -z "$ed" ]; then case "$BAKED_EDITION" in "{{"*) ed=express ;; *) ed="$BAKED_EDITION" ;; esac; fi
+  ed="$(resolve_edition "$ed")"
   set_edition "$ed"
   dir="${INSTALL_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/$E_APPDIR}"
   printf '\n  %s%s installer%s\n' "$C_BOLD" "$E_NAME" "$C_OFF"
@@ -266,7 +299,7 @@ bootstrap() {
     ok "already downloaded"
     if have git && [ -d "$dir/.git" ]; then change "update it with: git -C $dir pull --ff-only" git -C "$dir" pull --ff-only || warn "git pull did not succeed; carrying on with the copy that is there."; fi
   elif [ -e "$dir" ] && [ -n "$(ls -A "$dir" 2>/dev/null)" ]; then
-    die "$dir already exists and isn't a copy of $E_NAME." "Move it out of the way, or pass --install-dir (or HEARTH_INSTALL_DIR) to install somewhere else."
+    die "$dir already exists and isn't a copy of $E_NAME." "Move it out of the way, or pass --install-dir (or AGENT_EXPRESS_INSTALL_DIR) to install somewhere else."
   elif have git; then
     change "clone https://github.com/$E_REPO.git into $dir" _clone "$dir"
   else
@@ -392,7 +425,7 @@ ensure_tailscale() {
   if [ "$NO_TS" = 1 ]; then info "Skipping Tailscale (--no-tailscale): $E_NAME will only be reachable from this computer."; return; fi
   if [ -n "$(ts_bin)" ]; then ok "Tailscale $("$(ts_bin)" version 2>/dev/null | head -n 1)"; return; fi
   if [ "$IS_WSL" = 1 ]; then
-    warn "Inside WSL, Tailscale belongs on Windows: install Hearth with install.bat there for phone access."
+    warn "Inside WSL, Tailscale belongs on Windows: install $E_NAME with install.bat there for phone access."
     warn "Carrying on without Tailscale (this computer only)."
     NO_TS=1
     return
@@ -419,16 +452,16 @@ _install_ts_linux() {
 }
 
 # ------------------------------------------------------------------ the app
-health() { node "$ROOT/hearth.mjs" health "${1:-$S_PORT}" >/dev/null 2>&1; }
+health() { node "$ROOT/agent-express.mjs" health "${1:-$S_PORT}" >/dev/null 2>&1; }
 
 # This copy's runner, or this copy's office (and its terminal host) for this workspace. Never
 # anything else: another office on this computer is none of our business.
-hearth_pids() {
+app_pids() {
   { ps -eo pid=,args= 2>/dev/null || true; } | while read -r pid args; do
     [ "$pid" = "$$" ] && continue
     case "$args" in *node*) ;; *) continue ;; esac
     case "$args" in
-      *"$ROOT/hearth.mjs"*) echo "$pid" ;;
+      *"$ROOT/agent-express.mjs"*) echo "$pid" ;;
       *"$ROOT/"*"$S_WORKSPACE"*) echo "$pid" ;;
     esac
   done
@@ -468,7 +501,7 @@ start_app() {
     sleep 1
   done
   bad "$E_NAME did not answer on port $S_PORT within 90 seconds."
-  fix "look at the end of $ROOT/.hearth/logs/hearth.log, or run ./doctor.sh"
+  fix "look at the end of $ROOT/$STATE_NAME/logs/agent-express.log, or run ./doctor.sh"
   return 1
 }
 _start_launchd() {
@@ -476,15 +509,15 @@ _start_launchd() {
   else launchctl bootstrap "gui/$(id -u)" "$(plist_path)"; fi
 }
 _start_bg() {
-  mkdir -p "$ROOT/.hearth/logs"
+  mkdir -p "$ROOT/$STATE_NAME/logs"
   # nohup and its own session: it keeps running after this terminal closes.
-  if have setsid; then nohup setsid "$(command -v node)" "$ROOT/hearth.mjs" >/dev/null 2>&1 </dev/null &
-  else nohup "$(command -v node)" "$ROOT/hearth.mjs" >/dev/null 2>&1 </dev/null & fi
+  if have setsid; then nohup setsid "$(command -v node)" "$ROOT/agent-express.mjs" >/dev/null 2>&1 </dev/null &
+  else nohup "$(command -v node)" "$ROOT/agent-express.mjs" >/dev/null 2>&1 </dev/null & fi
 }
 
 stop_app() {
   local pids
-  pids="$(hearth_pids | tr '\n' ' ')"
+  pids="$(app_pids | tr '\n' ' ')"
   if [ -z "${pids// /}" ] && ! health; then ok "$E_NAME is not running"; return 0; fi
   change "stop $E_NAME" _stop
 }
@@ -493,11 +526,11 @@ _stop() {
   if [ "$OS" = mac ] && launchctl print "gui/$(id -u)/$E_LABEL" >/dev/null 2>&1; then launchctl bootout "gui/$(id -u)/$E_LABEL" 2>/dev/null || true; fi
   if [ "$OS" = linux ] && systemd_user_ok; then systemctl --user stop "$E_UNIT" 2>/dev/null || true; fi
   local pids i
-  pids="$(hearth_pids)"
+  pids="$(app_pids)"
   # SIGINT is the office's Ctrl+C: it closes and stops its agents too.
   [ -n "$pids" ] && kill -INT $pids 2>/dev/null || true
-  for i in 1 2 3 4 5 6 7 8 9 10; do [ -z "$(hearth_pids)" ] && break; sleep 0.5; done
-  pids="$(hearth_pids)"
+  for i in 1 2 3 4 5 6 7 8 9 10; do [ -z "$(app_pids)" ] && break; sleep 0.5; done
+  pids="$(app_pids)"
   [ -n "$pids" ] && kill -KILL $pids 2>/dev/null || true
   ok "$E_NAME stopped"
 }
@@ -511,7 +544,7 @@ file_hash() {
 REBUILT=0
 WAS_RUNNING=0
 build_app() {
-  local state="$ROOT/.hearth" lockhash head have_deps=0 have_build=0
+  local state="$ROOT/$STATE_NAME" lockhash head have_deps=0 have_build=0
   lockhash="$( [ -f "$ROOT/package-lock.json" ] && file_hash "$ROOT/package-lock.json" || echo none)"
   head="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || true)"
   [ -n "$head" ] || head="$lockhash$(file_hash "$ROOT/package.json")"
@@ -519,7 +552,7 @@ build_app() {
   [ -d "$ROOT/dist/server" ] && [ "$(cat "$state/build.stamp" 2>/dev/null)" = "$head" ] && have_build=1
   if [ "$have_deps" = 1 ] && [ "$have_build" = 1 ] && [ "$FORCE" != 1 ]; then ok "packages installed and app built (up to date)"; return; fi
   have npm || [ "$DRY" = 1 ] || die "npm was not found next to Node.js." "Reinstall Node.js LTS."
-  if [ -n "$(hearth_pids)" ]; then WAS_RUNNING=1; stop_app >/dev/null; fi
+  if [ -n "$(app_pids)" ]; then WAS_RUNNING=1; stop_app >/dev/null; fi
   local marker="$state/.ci-started"
   if [ "$have_deps" != 1 ] || [ "$FORCE" = 1 ]; then
     change "install packages: npm ci" _npm_ci "$lockhash" "$marker"
@@ -537,15 +570,15 @@ build_app() {
 }
 _npm_ci() {
   info "Installing packages (npm ci). This takes a minute or two the first time..."
-  mkdir -p "$ROOT/.hearth"
+  mkdir -p "$ROOT/$STATE_NAME"
   touch "$2"
   (cd "$ROOT" && npm ci --no-audit --no-fund --loglevel=error) || die "npm ci failed (see above)." "Check your internet connection and run ./install.sh again."
-  printf '%s' "$1" >"$ROOT/.hearth/deps.stamp"
+  printf '%s' "$1" >"$ROOT/$STATE_NAME/deps.stamp"
 }
 _npm_build() {
   info "Building the app..."
   (cd "$ROOT" && npm run build) || die "npm run build failed (see above)." "Run ./doctor.sh, and open an issue with the last 30 lines above if it keeps failing."
-  printf '%s' "$1" >"$ROOT/.hearth/build.stamp"
+  printf '%s' "$1" >"$ROOT/$STATE_NAME/build.stamp"
   ok "app built"
 }
 
@@ -612,7 +645,7 @@ _git_init() {
   git -C "$1" init -q -b main 2>/dev/null || git -C "$1" init -q
   git -C "$1" add -A
   # Named here, so it works before you've ever set up git (only this first commit uses it).
-  git -C "$1" -c user.name=Hearth -c user.email=hearth@localhost commit -q -m "Start my workspace" || warn "git commit in the workspace failed"
+  git -C "$1" -c "user.name=Agent Express" -c user.email=agent-express@localhost commit -q -m "Start my workspace" || warn "git commit in the workspace failed"
 }
 
 # Claude Code asks "Is this a project you trust?" the first time it opens a folder, and its default
@@ -621,7 +654,7 @@ _git_init() {
 # holding only the starter files above, so it's marked trusted, the same as answering yes once.
 trust_workspace() {
   have node || return 0
-  local hm="$ROOT/hearth.mjs" out rc=0
+  local hm="$ROOT/agent-express.mjs" out rc=0
   out="$(node "$hm" trust-workspace --check --workspace "$S_WORKSPACE" 2>&1)" || rc=$?
   if [ "$rc" = 0 ]; then ok "Claude Code trusts the workspace"; return 0; fi
   if [ "$rc" = 3 ]; then warn "$out"; return 0; fi
@@ -644,8 +677,9 @@ new_password() {
 PASSWORD_CHANGED=0
 SHOW_PASSWORD=""
 ensure_password() { # reset(1/0)
-  local status="none" pw="${HEARTH_PASSWORD:-}" generated=0 a b
-  [ -f "$ROOT/.hearth/settings.env" ] && have node && status="$(node "$ROOT/hearth.mjs" password-status 2>/dev/null || echo none)"
+  local status="none" pw generated=0 a b
+  pw="$(env_var PASSWORD)"
+  [ -f "$(state_dir)/settings.env" ] && have node && status="$(node "$ROOT/agent-express.mjs" password-status 2>/dev/null || echo none)"
   if [ "$status" = set ] && [ "${1:-0}" != 1 ]; then ok "a sign-in password is set (./password.sh sets a new one)"; return; fi
   if [ -z "$pw" ] && [ "$YES" != 1 ] && [ "$DRY" != 1 ] && can_prompt; then
     info "Choose the password you will sign in with on your phone (at least 8 characters),"
@@ -666,7 +700,7 @@ ensure_password() { # reset(1/0)
   fi
   if [ -z "$pw" ]; then pw="$(new_password)"; generated=1; fi
   if [ "$DRY" = 1 ]; then printf '    %s[dry-run] would save the sign-in password (only a hash of it is stored)%s\n' "$C_MAG" "$C_OFF"; return; fi
-  printf '%s' "$pw" | node "$ROOT/hearth.mjs" set-password >/dev/null || die "Could not save the password."
+  printf '%s' "$pw" | node "$ROOT/agent-express.mjs" set-password >/dev/null || die "Could not save the password."
   PASSWORD_CHANGED=1
   [ "$generated" = 1 ] && SHOW_PASSWORD="$pw"
   ok "sign-in password saved"
@@ -688,7 +722,7 @@ register_autostart() {
 _write_plist() {
   local p
   p="$(plist_path)"
-  mkdir -p "$(dirname "$p")" "$ROOT/.hearth/logs"
+  mkdir -p "$(dirname "$p")" "$ROOT/$STATE_NAME/logs"
   cat >"$p" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -699,15 +733,15 @@ _write_plist() {
   <key>ProgramArguments</key>
   <array>
     <string>$(xml_escape "$S_NODE")</string>
-    <string>$(xml_escape "$ROOT/hearth.mjs")</string>
+    <string>$(xml_escape "$ROOT/agent-express.mjs")</string>
   </array>
   <key>WorkingDirectory</key><string>$(xml_escape "$ROOT")</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
   <key>ThrottleInterval</key><integer>60</integer>
   <key>EnvironmentVariables</key><dict><key>PATH</key><string>$(xml_escape "$(service_path)")</string></dict>
-  <key>StandardOutPath</key><string>$(xml_escape "$ROOT/.hearth/logs/launchd.log")</string>
-  <key>StandardErrorPath</key><string>$(xml_escape "$ROOT/.hearth/logs/launchd.log")</string>
+  <key>StandardOutPath</key><string>$(xml_escape "$ROOT/$STATE_NAME/logs/launchd.log")</string>
+  <key>StandardErrorPath</key><string>$(xml_escape "$ROOT/$STATE_NAME/logs/launchd.log")</string>
 </dict>
 </plist>
 EOF
@@ -725,7 +759,7 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=$(systemd_quote "$ROOT")
-ExecStart=$(systemd_quote "$S_NODE") $(systemd_quote "$ROOT/hearth.mjs")
+ExecStart=$(systemd_quote "$S_NODE") $(systemd_quote "$ROOT/agent-express.mjs")
 Environment=$(systemd_quote "PATH=$(service_path)")
 Restart=on-failure
 RestartSec=60
@@ -754,8 +788,27 @@ _rm_unit() {
   ok "systemd user service removed"
 }
 
+# The launchd agent or systemd unit an install from before the rename made (tech.datafying.hearth,
+# hearth.service...) starts a runner that isn't there any more, so it goes, when it's this copy's.
+remove_old_autostart() {
+  local p="${PLIST/LABEL/$E_OLD_LABEL}"
+  if [ "$OS" = mac ] && [ -f "$p" ] && grep -qF "$ROOT/" "$p"; then
+    change "remove the launchd agent $p (the app's name before the rename)" _rm_old_plist "$p"
+  elif [ "$OS" = linux ] && [ -f "$UNIT_DIR/$E_OLD_UNIT" ] && grep -qF "$ROOT/" "$UNIT_DIR/$E_OLD_UNIT"; then
+    change "remove the systemd user service $E_OLD_UNIT (the app's name before the rename)" _rm_old_unit
+  fi
+}
+_rm_old_plist() { launchctl bootout "gui/$(id -u)/$E_OLD_LABEL" 2>/dev/null || true; rm -f "$1"; ok "old launchd agent removed"; }
+_rm_old_unit() {
+  systemctl --user disable --now "$E_OLD_UNIT" >/dev/null 2>&1 || true
+  rm -f "$UNIT_DIR/$E_OLD_UNIT"
+  systemctl --user daemon-reload 2>/dev/null || true
+  ok "old systemd user service removed"
+}
+
 setup_autostart() {
   local want
+  remove_old_autostart
   if [ -n "$AUTOSTART_FLAG" ]; then want="$AUTOSTART_FLAG"
   elif [ "$S_AUTOSTART" = 1 ] || [ "$S_AUTOSTART" = 0 ]; then want="$S_AUTOSTART"
   else
@@ -776,10 +829,10 @@ ts_info() {
   local line
   TS_STATE="" TS_DNS="" TS_IP=""
   [ -n "$(ts_bin)" ] || return 0
-  line="$(HEARTH_TAILSCALE="$(ts_bin)" node "$ROOT/hearth.mjs" tailscale-info 2>/dev/null || true)"
+  line="$(AGENT_EXPRESS_TAILSCALE="$(ts_bin)" node "$ROOT/agent-express.mjs" tailscale-info 2>/dev/null || true)"
   IFS=$'\t' read -r TS_STATE TS_DNS TS_IP <<<"$line" || true
 }
-serve_target() { HEARTH_TAILSCALE="$(ts_bin)" node "$ROOT/hearth.mjs" serve-target "$1" 2>/dev/null || true; }
+serve_target() { AGENT_EXPRESS_TAILSCALE="$(ts_bin)" node "$ROOT/agent-express.mjs" serve-target "$1" 2>/dev/null || true; }
 
 # tailscale, and again with sudo when Linux says only root (or the operator) may change it.
 ts_run() {
@@ -886,17 +939,17 @@ doctor() {
   else bad "Claude Code not found"; fix "curl -fsSL https://claude.ai/install.sh | bash"; fails=$((fails + 1)); fi
   if [ -d "$ROOT/node_modules" ]; then ok "packages installed"; else bad "packages not installed"; fix "./install.sh"; fails=$((fails + 1)); fi
   if [ -d "$ROOT/dist/server" ]; then ok "app built"; else bad "app not built"; fix "./install.sh (or npm run build)"; fails=$((fails + 1)); fi
-  if [ "$HAS_SETTINGS" != 1 ]; then bad "not installed yet (no .hearth/settings.env)"; fix "./install.sh"; return 1; fi
+  if [ "$HAS_SETTINGS" != 1 ]; then bad "not installed yet (no $STATE_NAME/settings.env)"; fix "./install.sh"; return 1; fi
   if [ -d "$S_WORKSPACE" ]; then ok "workspace $S_WORKSPACE"; else bad "workspace $S_WORKSPACE is missing"; fix "./install.sh recreates it"; fails=$((fails + 1)); fi
   if [ -d "$S_WORKSPACE/.git" ]; then ok "workspace is a git repository"; else bad "workspace is not a git repository (agents need one)"; fix "./install.sh, or: git -C \"$S_WORKSPACE\" init"; fails=$((fails + 1)); fi
   if have node; then
-    t="$(node "$ROOT/hearth.mjs" trust-workspace --check --workspace "$S_WORKSPACE" 2>&1)" && ok "Claude Code trusts the workspace" || {
+    t="$(node "$ROOT/agent-express.mjs" trust-workspace --check --workspace "$S_WORKSPACE" 2>&1)" && ok "Claude Code trusts the workspace" || {
       bad "Claude Code doesn't trust the workspace yet: agents would stop at its 'Do you trust this folder?' question ($t)"
       fix "./doctor.sh --force marks it trusted (stop $E_NAME first), or run  claude  in the workspace once and answer yes"
       fails=$((fails + 1))
       if [ "$FORCE" = 1 ] && ask "Mark $S_WORKSPACE as trusted in ~/.claude.json now?" 1; then trust_workspace; fi
     }
-    pw="$(node "$ROOT/hearth.mjs" password-status 2>/dev/null || echo none)"
+    pw="$(node "$ROOT/agent-express.mjs" password-status 2>/dev/null || echo none)"
     case "$pw" in
       set) ok "sign-in password set" ;;
       generated) warn "the office generated its own password"; fix "./password.sh sets one you know" ;;
@@ -913,7 +966,7 @@ doctor() {
   else
     owner="$(port_owner "$S_PORT" || true)"
     if [ -n "$owner" ]; then bad "port $S_PORT is taken by $owner, not $E_NAME"; fix "close it, or ./install.sh --port <another>"
-    else bad "not running"; fix "./start.sh (then look at .hearth/logs/hearth.log if it stops again)"; fi
+    else bad "not running"; fix "./start.sh (then look at $STATE_NAME/logs/agent-express.log if it stops again)"; fi
     fails=$((fails + 1))
   fi
   if [ "$S_TAILSCALE" = 0 ]; then info "      Tailscale is off for this install (--no-tailscale)"
@@ -927,10 +980,10 @@ doctor() {
     elif [ -n "$have_t" ]; then bad "tailscale serve sends port $S_PORT to $have_t, not $E_NAME"; fix "tailscale serve --http=$S_PORT off, then ./install.sh"; fails=$((fails + 1))
     else bad "port $S_PORT is not shared on your tailnet"; fix "tailscale serve --bg --http=$S_PORT $want   (or ./install.sh)"; fails=$((fails + 1)); fi
   fi
-  if [ -f "$ROOT/.hearth/logs/hearth.log" ]; then
+  if [ -f "$ROOT/$STATE_NAME/logs/agent-express.log" ]; then
     local errs
-    errs="$(tail -n 200 "$ROOT/.hearth/logs/hearth.log" | grep -iE 'error|EADDRINUSE|unhandled' | tail -n 5 || true)"
-    if [ -n "$errs" ]; then warn "recent errors in .hearth/logs/hearth.log:"; printf '%s\n' "$errs" | sed 's/^/        /'; fi
+    errs="$(tail -n 200 "$ROOT/$STATE_NAME/logs/agent-express.log" | grep -iE 'error|EADDRINUSE|unhandled' | tail -n 5 || true)"
+    if [ -n "$errs" ]; then warn "recent errors in $STATE_NAME/logs/agent-express.log:"; printf '%s\n' "$errs" | sed 's/^/        /'; fi
   fi
   echo
   if [ "$fails" -gt 0 ]; then printf '  %s%s problem(s) found; the fixes are listed above.%s\n' "$C_YELLOW" "$fails" "$C_OFF"; return 1; fi
@@ -959,6 +1012,7 @@ uninstall() {
   step "Uninstalling $E_NAME from this computer"
   stop_app
   remove_autostart
+  remove_old_autostart
   [ "$HAS_SETTINGS" = 1 ] && remove_serve
   echo
   info "Left in place, for you to delete by hand if you want:"
@@ -979,13 +1033,15 @@ main() {
     if [ -n "$src" ] && [ -f "$src" ]; then ROOT="$(cd "$(dirname "$src")" && pwd)"; fi
   fi
   if ! is_checkout "$ROOT"; then
-    [ "$ACTION" = install ] || die "This isn't inside a copy of Hearth (${ROOT:-piped})." "Run it from the folder you installed Hearth into."
+    [ "$ACTION" = install ] || die "This isn't inside a copy of Agent Express (${ROOT:-piped})." "Run it from the folder you installed the app into."
     bootstrap
     return
   fi
+  move_old_state
   read_settings
   local ed="${EDITION:-${S_EDITION:-}}"
   [ -n "$ed" ] || ed="$(detect_edition "$ROOT")"
+  ed="$(resolve_edition "$ed")"
   set_edition "$ed"
   S_EDITION="$ed"
   S_PORT="${PORT:-${S_PORT:-$E_PORT}}"
@@ -1047,7 +1103,7 @@ main() {
   step "Installing the app"
   local owner
   owner="$(port_owner "$S_PORT" || true)"
-  if [ -n "$owner" ] && [ -z "$(hearth_pids)" ]; then
+  if [ -n "$owner" ] && [ -z "$(app_pids)" ]; then
     die "Port $S_PORT is already in use by $owner." "Close it, or choose another port: ./install.sh --port $((S_PORT + 1))"
   fi
   build_app

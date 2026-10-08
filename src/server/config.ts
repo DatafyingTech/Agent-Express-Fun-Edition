@@ -89,8 +89,8 @@ Options:
                           (default ~/${edition.workspaceDir}, env AGENT_OFFICE_PROJECTS).
                           Also settable from ⚙️ Settings in the office
   -p, --port <n>          Port to listen on (default ${edition.defaultPort}, env PORT)
-      --edition <name>    hearth, hq or office: which app this is (env HEARTH_EDITION;
-                          the installers set it)
+      --edition <name>    express, fun or office: which app this is
+                          (env AGENT_EXPRESS_EDITION; the installers set it)
   -H, --host <addr>       Address to bind (default 0.0.0.0)
       --password <pw>     Office password (env AGENT_OFFICE_PASSWORD).
                           Without one, a random password is generated once and
@@ -158,7 +158,7 @@ function parseTurn(url: string): RTCIceServerLike {
   return { urls: url };
 }
 
-/** Where the office lives when it isn't started in a project: ~/agent-office (~/Hearth...), or $AGENT_OFFICE_HOME. */
+/** Where the office lives when it isn't started in a project: ~/agent-office (~/AgentExpress...), or $AGENT_OFFICE_HOME. */
 export function officeHome(): string {
   return path.resolve(process.env.AGENT_OFFICE_HOME || path.join(os.homedir(), edition.workspaceDir));
 }
@@ -265,7 +265,7 @@ export function loadConfig(argv: string[]): Config {
         const v = takeValue(argv, i++, a);
         const id = parseEdition(v);
         if (!id) {
-          console.error(`${edition.command}: --edition is hearth, hq or office, not ${v}`);
+          console.error(`${edition.command}: --edition is express, fun or office, not ${v}`);
           process.exit(2);
         }
         setEdition(id);

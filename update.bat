@@ -1,7 +1,7 @@
 @echo off
-rem Updates Hearth: double-click me. Gets the newest version (git pull, or the ZIP from GitHub),
+rem Updates Agent Express (Fun Edition): double-click me. Gets the newest version (git pull, or the ZIP from GitHub),
 rem reinstalls packages, rebuilds and restarts it, with the settings you already chose. Your
-rem workspace, password and settings (.hearth\) are not part of the download, so nothing of yours
+rem workspace, password and settings (.agent-express\) are not part of the download, so nothing of yours
 rem is touched.
 rem
 rem Why the whole body is one ( ) block, and why install.ps1 runs from a copy in %TEMP%: cmd.exe
@@ -15,7 +15,7 @@ setlocal EnableDelayedExpansion
   if not exist "!PS!" set "PS=powershell"
   set "REPO=%~dp0"
   if "!REPO:~-1!"=="\" set "REPO=!REPO:~0,-1!"
-  set "TMPPS=%TEMP%\hearth-update-%RANDOM%%RANDOM%.ps1"
+  set "TMPPS=%TEMP%\agent-express-update-%RANDOM%%RANDOM%.ps1"
   copy /y "%~dp0install.ps1" "!TMPPS!" >nul
   if not exist "!TMPPS!" (
     echo Could not copy install.ps1 into your temp folder.

@@ -1,5 +1,5 @@
 /*
- * Hearth: Settings (views/settings.ts), owned by the settings agent (see docs/app/REDESIGN.md).
+ * Agent Express (/app): Settings (views/settings.ts), owned by the settings agent (see docs/app/REDESIGN.md).
  * iOS Settings in "Evening Glass": inset glass groups, icons in tinted rounded squares, a pushed page
  * per part, and on a wide screen the list and the page side by side. Tokens only (--a-*); anything
  * that isn't a token is a color-mix() over tokens. The new glass tokens are used with fallbacks, so
@@ -687,7 +687,7 @@ body.app .a-set-theme__radio {
 body.app .a-set-theme[aria-checked="true"] .a-set-theme__radio { background: var(--a-set-accent); box-shadow: none; color: var(--a-on-accent, var(--a-on-clay)); }
 body.app .a-set-theme__radio svg { stroke-width: 3; }
 
-/* A miniature Hearth screen, painted with one theme's tokens (--p-*, set inline from tokens.css). */
+/* A miniature app screen, painted with one theme's tokens (--p-*, set inline from tokens.css). */
 body.app .a-set-mini {
   position: absolute;
   inset: 0;

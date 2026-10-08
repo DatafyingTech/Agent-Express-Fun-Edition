@@ -1,8 +1,8 @@
-// Hearth's icons: Lucide (https://lucide.dev, ISC license), only the ones the app uses, as inline SVG.
+// The app's icons (Agent Express, /app): Lucide (https://lucide.dev, ISC license), only the ones the app uses, as inline SVG.
 // Stroke icons on a 24 x 24 grid, drawn in currentColor, always aria-hidden: the button or link that
 // holds one carries the label (see docs/app/DESIGN.md §8.6). No icon font, no runtime dependency.
 
-/** Hearth name → Lucide geometry (the SVG's inner markup). */
+/** The app's icon name → Lucide geometry (the SVG's inner markup). */
 const PATHS = {
   home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   chats: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -44,7 +44,7 @@ const PATHS = {
   download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
   warning: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
-  // Added for Hearth v2 (Create sheet, terminal, changes, tasks, meetings, the office).
+  // Added for the app's v2 (Create sheet, terminal, changes, tasks, meetings, the office).
   up: '<path d="m18 15-6-6-6 6"/>',
   'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
   'user-plus': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/>',

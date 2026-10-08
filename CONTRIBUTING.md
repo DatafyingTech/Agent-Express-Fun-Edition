@@ -1,8 +1,8 @@
 # Contributing
 
-Thanks for taking a look. Hearth and Hearth HQ share one codebase: a Node server that runs Claude
-Code agents in real terminals, a phone-first web app (Hearth), and a 3D office (Hearth HQ) on top of
-the same server. PRs that keep it small, local and dependency-light are the easiest to merge.
+Thanks for taking a look. Agent Express and Agent Express (Fun Edition) share one codebase: a Node
+server that runs Claude Code agents in real terminals, a phone-first web app (Agent Express), and a
+3D office on top of the same server (the Fun Edition). PRs that keep it small, local and dependency-light are the easiest to merge.
 
 ## What you need
 
@@ -24,17 +24,17 @@ npm install            # also builds the client and the server
 npm run dev            # Vite for the client + the server in watch mode, password "dev"
 ```
 
-`npm run dev` serves on port 4600. If you also have Hearth installed and running on that port, stop
+`npm run dev` serves on port 4600. If you also have Agent Express installed and running on that port, stop
 it first (`stop.bat` / `./stop.sh`), or run the two halves yourself on another port:
 
 ```bash
 npx vite &                                                            # the client, with hot reload
-npx tsx watch src/server/cli.ts ~/hearth-dev --port 4700 --password dev   # the server, in a scratch workspace
+npx tsx watch src/server/cli.ts ~/agent-express-dev --port 4700 --password dev   # the server, in a scratch workspace
 ```
 
 Use a **scratch workspace** rather than the workspace you really use: an empty folder that is a git
 repository with one commit, because agents work in git worktrees of it
-(`mkdir ~/hearth-dev && cd ~/hearth-dev && git init && git commit --allow-empty -m start`). Real agents cost real money: while you are iterating, hire teammates on
+(`mkdir ~/agent-express-dev && cd ~/agent-express-dev && git init && git commit --allow-empty -m start`). Real agents cost real money: while you are iterating, hire teammates on
 Haiku (the hire sheet has a model picker), or pass `--agent-args "--model haiku"` to the server.
 
 A brand-new folder makes Claude Code ask "Do you trust this folder?", and its default answer is
@@ -42,10 +42,10 @@ A brand-new folder makes Claude Code ask "Do you trust this folder?", and its de
 the folder, or mark it trusted the way the installer does:
 
 ```bash
-node hearth.mjs trust-workspace --workspace ~/hearth-dev
+node agent-express.mjs trust-workspace --workspace ~/agent-express-dev
 ```
 
-Set `HEARTH_CLAUDE_JSON=/path/to/a/copy/.claude.json` first if you want to try that against a copy
+Set `AGENT_EXPRESS_CLAUDE_JSON=/path/to/a/copy/.claude.json` first if you want to try that against a copy
 instead of your real Claude Code settings.
 
 ## Tests and typechecks
@@ -76,10 +76,10 @@ or places. It is the team every new user starts with.
 |---|---|
 | `src/server/` | The server: agents and their terminals (`workers.ts`, `ptys.ts`, `ptyhost.ts`), meetings (`meetings.ts`), the shared memory (`memory.ts`), chat, tasks and the queue, GitHub, changes and PRs, accounts and sign-in (`auth.ts`, `accounts.ts`), usage and limits |
 | `src/shared/` | Types and logic both sides use: the WebSocket protocol (`protocol.ts`), the roster and teams, meeting patterns, floors |
-| `src/client/app/` | **Hearth**, the phone-first app: plain TypeScript and DOM, plain CSS with design tokens (`tokens.css`). Its design system is written up in `docs/app/DESIGN.md` |
-| `src/client/` (the rest) | **Hearth HQ**, the 3D office: `world/` is the Three.js scene, `ui/` the windows over it |
+| `src/client/app/` | **Agent Express**, the phone-first app: plain TypeScript and DOM, plain CSS with design tokens (`tokens.css`). Its design system is written up in `docs/app/DESIGN.md` |
+| `src/client/` (the rest) | **Agent Express (Fun Edition)**, the 3D office: `world/` is the Three.js scene, `ui/` the windows over it |
 | `tests/` | Node's built-in test runner, run through `tsx` |
-| `install.ps1`, `install.sh`, `hearth.mjs` and the `.bat` / `.sh` helpers | The installers and the runner they share |
+| `install.ps1`, `install.sh`, `agent-express.mjs` and the `.bat` / `.sh` helpers | The installers and the runner they share |
 
 No React, no Tailwind and no component library in the app. Comments say *why*, in plain sentences.
 

@@ -6,18 +6,18 @@ All notable changes are documented here. The format follows
 
 ## [1.0.0] - 2026-10-08
 
-The first public release of **Hearth** and **Hearth HQ**, built on
+The first public release of **Agent Express** and **Agent Express (Fun Edition)**, built on
 [agent-office](https://github.com/AgentSystemLabs/agent-office) by AgentSystemLabs (MIT). What's
 listed below is what this release adds on top of it.
 
 ### Added
 
-- **Hearth, a phone-first app for your team.** A calm messaging app over the office at `/app`:
+- **Agent Express, a phone-first app for your team.** A calm messaging app over the office at `/app`:
   Home with a greeting and a **Needs you** list, **Chats**, **Settings**, and one space per project
   folder with **Team**, **Meetings**, **Tasks**, **Notes**, **Reports** and **GitHub**. Designed at
   390 px first, with a tablet rail and a desktop sidebar, light and dark themes, and a Home Screen
-  icon (it opens full screen when you add it to an iPhone or Android Home Screen). Hearth opens it
-  at `/`; Hearth HQ opens the 3D office there and sends phones to the app.
+  icon (it opens full screen when you add it to an iPhone or Android Home Screen). Agent Express opens it
+  at `/`; Agent Express (Fun Edition) opens the 3D office there and sends phones to the app.
 - **A roster of 35 teammates in nine departments** (Leadership, Operations, Engineering, Marketing,
   Sales, Finance, Research, Home & Life, Personal Finance), each with a job, a brief and a default
   model and effort: Opus where judgment matters, Sonnet for everyday work, Haiku for lists and

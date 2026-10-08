@@ -11,6 +11,7 @@
 import type { AppContext, View } from '../context';
 import { changedImageType, type ChangedFile, type ChangesState, type ServerMsg, type WorkerInfo } from '../../../shared/protocol';
 import { icon } from '../icons';
+import { APP_NAME } from '../../../shared/edition';
 import { avatar, button, confirmDialog, h, iconButton, setBusy, sheet, spaceColor } from '../ui';
 import { followKeyboard, haptic, onNetStatus, onServer, phoneLayout, tmBack, tmIcon } from './terminal';
 import { plainSpace } from './chat';
@@ -131,7 +132,7 @@ export const changesView: View = (root, ctx, route) => {
   const w0 = info();
   const name = w0?.name ?? 'Teammate';
   const plain = plainSpace(floor, w0);
-  document.title = `${name} · Changes · Hearth`;
+  document.title = `${name} · Changes · ${APP_NAME}`;
 
   let state: ChangesState | null = null;
   let selected: string | null = null;

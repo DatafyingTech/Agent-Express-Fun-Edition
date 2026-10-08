@@ -1,4 +1,4 @@
-// Hearth's shared pieces (docs/app/DESIGN.md §5, §7): status in words, avatars with their rings,
+// The app's shared pieces (docs/app/DESIGN.md §5, §7): status in words, avatars with their rings,
 // chips, buttons, sheets and dialogs, menus, toasts, empty states, skeletons, time in words, the
 // theme, the per-device hidden spaces, and the building-wide team list (GET /api/team).
 // Every screen builds on these so the app reads as one thing. Class names are exactly DESIGN.md's.
@@ -25,7 +25,7 @@ export type Who = Pick<WorkerInfo, 'id' | 'name' | 'color' | 'status' | 'acked'>
     lastMessageAt?: number;
   };
 
-/** The five states Hearth shows. */
+/** The five states the app shows. */
 export type UiStatus = 'needs' | 'done' | 'working' | 'ready' | 'resting';
 
 export function uiStatus(w: { status: WorkerStatus; acked: boolean }): UiStatus {
@@ -664,7 +664,7 @@ function popover(anchor: HTMLElement, items: MenuItem[], label: string) {
 }
 
 // =================================================================================================
-// Hearth v2 primitives: haptics, pill tabs, glass cards, rich action sheets, meters, and the large
+// App v2 primitives: haptics, pill tabs, glass cards, rich action sheets, meters, and the large
 // title that collapses into a glass header. New exports only; nothing above changed shape.
 // =================================================================================================
 
@@ -947,7 +947,7 @@ export function applyTheme(pref: ThemePref = themePref(), save = false) {
 
 const HIDDEN_KEY = 'hearth.hiddenSpaces';
 /** Fired on window when the hidden spaces change (Settings dispatches it too). */
-export const SPACES_EVENT = 'hearth:spaces';
+export const SPACES_EVENT = 'app:spaces';
 
 /** Spaces she turned off in Settings, on this device. */
 export function hiddenSpaces(): Set<string> {
@@ -1171,7 +1171,7 @@ export function onTeam(fn: () => void): () => void {
 
 let myName: string | null = null;
 
-/** The sign-in page, coming back to this very screen of Hearth afterwards. */
+/** The sign-in page, coming back to this very screen of the app afterwards. */
 export function signInAgain() {
   location.href = '/login?next=' + encodeURIComponent('/app' + location.hash);
 }

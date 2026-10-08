@@ -1,4 +1,4 @@
-# Your first hour with Hearth
+# Your first hour with Agent Express
 
 This walks you from a fresh install to a small team that knows you, answers on your phone, and
 talks things through together. It takes about an hour, most of it reading what your teammates
@@ -7,25 +7,25 @@ write back.
 The screenshots come from a real install with a made-up company, **Acme Studio**, run by a
 made-up person, **Sam**. Your names will be yours.
 
-> **Hearth HQ?** Everything here works the same in Hearth HQ. Open the app part at
+> **Using Agent Express (Fun Edition)?** Everything here works the same there. Open the app part at
 > `http://localhost:4610/app` on the computer (phones get it automatically), or do the same things
-> in the 3D office: the tips marked **In HQ** say how.
+> in the 3D office: the tips marked **In the Fun Edition** say how.
 
-**What you need:** Hearth installed (see the [README](../README.md#install)) and your password.
+**What you need:** Agent Express installed (see the [README](../README.md#install)) and your password.
 Optional: a phone with Tailscale for step 5.
 
 ---
 
 ## 1. Sign in and look around
 
-Open **http://localhost:4600** on the computer that runs Hearth and sign in with the password you
+Open **http://localhost:4600** on the computer that runs Agent Express and sign in with the password you
 chose during install.
 
 <p align="center"><img src="images/tutorial-1-home.png" alt="Home: a greeting, who needs you, and your spaces" width="320"></p>
 
 This is **Home**. It greets you, lists anyone who **needs you** (nobody yet), and shows **your
 spaces**. A space is one folder your team works in, with its own teammates, notes and tasks. The
-installer made your first one: your workspace, `~/Hearth`.
+installer made your first one: your workspace, `~/AgentExpress`.
 
 At the bottom (or down the side on a wide screen) are **Home**, **Chats**, **Settings**, and the
 round **✚** button, which is the quickest way to do almost anything: message someone, call a
@@ -53,7 +53,7 @@ on **Usual** for now (their brief picks a sensible one). Tap **Add Chief of Staf
 
 They appear in your space as **Getting settled…** while Claude Code starts up, then **Ready**.
 
-> **In HQ:** walk up to an empty desk and press **E**, pick **Chief of Staff** under **Teammate**,
+> **In the Fun Edition:** walk up to an empty desk and press **E**, pick **Chief of Staff** under **Teammate**,
 > and hire. They walk in, sit down and open their laptop.
 
 > **If they show "Needs you" straight away**, Claude Code is asking whether it may trust the
@@ -133,7 +133,7 @@ conversation is saved. You'll find it under **Meetings → Earlier meetings** an
 > **Divide & combine** for the same task over many parts, **Red / blue** to attack and fix a plan,
 > or a **Review panel** for a pull request. When it's over, ask the lead **Follow-ups**.
 
-> **In HQ:** walk into the glass meeting room under the boss's office and press **E** at the table.
+> **In the Fun Edition:** walk into the glass meeting room under the boss's office and press **E** at the table.
 > Your teammates get up from their desks, walk in and sit down. The conversation window has the
 > same **To** row and the **What the table knows** panel, kept by Haiku.
 
@@ -141,7 +141,7 @@ conversation is saved. You'll find it under **Meetings → Earlier meetings** an
 
 ## 5. On your phone
 
-This is where Hearth earns its keep: your team, in your pocket, while the work happens on your
+This is where Agent Express earns its keep: your team, in your pocket, while the work happens on your
 computer.
 
 1. **Install Tailscale** on your phone (App Store or Google Play) and sign in with **the same
@@ -162,7 +162,7 @@ Your computer has to be on and awake. Everything travels over Tailscale, private
 own devices; nothing is opened to the internet.
 
 **Someone else's phone:** share your computer with them in the Tailscale admin console (the
-computer's **⋯ → Share…**), then make them an account in Hearth: **Settings → People & access →
+computer's **⋯ → Share…**), then make them an account in Agent Express: **Settings → People & access →
 Invite someone**. They open the link, pick a password, and they're in under their own name.
 
 ---
@@ -189,7 +189,7 @@ A few crews to try next: **Home Team** for chores, the family calendar, meals an
 Money Meeting** for the household budget review; **Product Team** if your space is a code
 project.
 
-> **In HQ:** **☰ → Hire a crew** seats them at desks next to each other.
+> **In the Fun Edition:** **☰ → Hire a crew** seats them at desks next to each other.
 
 ---
 

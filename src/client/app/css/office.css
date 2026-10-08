@@ -1,5 +1,5 @@
 /*
- * Hearth: office & work (owned by the office agent, see docs/app/REDESIGN.md §3).
+ * Agent Express (/app): office & work (owned by the office agent, see docs/app/REDESIGN.md §3).
  *   Tasks segment  (views/tasks.ts)   .a-of-task*, .a-of-q*, .a-of-add*, .a-of-pill*, .a-of-stepper*
  *   GitHub segment (views/github.ts)  .a-of-gh*, .a-of-pr*, .a-of-diff*, .a-of-svc*
  *   The office     (views/office.ts)  .a-of-office*, .a-of-dog*, .a-of-chat*, .a-of-jb*, .a-of-theme*

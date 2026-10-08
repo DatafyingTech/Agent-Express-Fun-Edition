@@ -1,5 +1,5 @@
 /*
- * Hearth: the Space screens' own layout (Notes, Reports, Add teammates, Group chat) and Settings.
+ * Agent Express (/app): the Space screens' own layout (Notes, Reports, Add teammates, Group chat) and Settings.
  * Restyled for "Evening Glass" (docs/app/REDESIGN.md): the per-area CSS in css/ loads after this.
  * docs/app/DESIGN.md §6.3, §6.5, §6.6, §6.7. Built on components.css (buttons, cards, rows, sheets,
  * switches, segmented control, empty states, skeletons, fields); this file only arranges them and

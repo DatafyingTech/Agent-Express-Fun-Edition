@@ -2,6 +2,7 @@ import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { officeHome } from './config.js';
+import { edition } from '../shared/edition.js';
 import type { AccountInvite, AccountRole, AccountsState } from '../shared/protocol.js';
 
 export const NAME_MAX = 24;
@@ -283,20 +284,20 @@ export class Accounts {
   }
 }
 
-const HELP = `agent-office accounts — who can sign in to the office
+const help = () => `${edition.command} accounts — who can sign in to the office
 
 Usage:
-  agent-office accounts [list]                 Accounts, open invites, and the shared password
-  agent-office accounts invite [name] [--admin]
+  ${edition.command} accounts [list]                 Accounts, open invites, and the shared password
+  ${edition.command} accounts invite [name] [--admin]
                                                Make a single-use invite link (valid 7 days)
-  agent-office accounts revoke <name>          Delete an account; it's signed out at once
-  agent-office accounts role <name> admin|member
-  agent-office accounts password on|off        Whether the shared office password still works
+  ${edition.command} accounts revoke <name>          Delete an account; it's signed out at once
+  ${edition.command} accounts role <name> admin|member
+  ${edition.command} accounts password on|off        Whether the shared office password still works
 
 Options:
   -d, --dir <dir>   The office's directory: the project it was started in, or its
                     home (default: the current directory if an office ran there,
-                    else ~/agent-office or $AGENT_OFFICE_HOME)
+                    else ~/${edition.workspaceDir} or $AGENT_OFFICE_HOME)
   -h, --help        Show this help
 
 Works while the office runs: it picks up the changes within seconds.
@@ -313,7 +314,7 @@ export function accountsCommand(argv: string[]): number {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') {
-      process.stdout.write(HELP);
+      process.stdout.write(help());
       return 0;
     } else if (a === '-d' || a === '--dir') {
       if (!argv[i + 1]) return usage('--dir needs a value');
@@ -326,7 +327,7 @@ export function accountsCommand(argv: string[]): number {
   try {
     statSync(dataDir);
   } catch {
-    console.error(`agent-office accounts: no office has run in ${dir} yet — start it once with \`agent-office\` there`);
+    console.error(`${edition.command} accounts: no office has run in ${dir} yet — start it once with \`${edition.command}\` there`);
     return 1;
   }
   const accounts = new Accounts(dataDir);
@@ -340,7 +341,7 @@ export function accountsCommand(argv: string[]): number {
       for (const a of s.accounts) {
         console.log(`  ${a.name.padEnd(NAME_MAX)}  ${a.role.padEnd(6)}  since ${day(a.createdAt)}  ${a.lastSeenAt ? `last seen ${day(a.lastSeenAt)}` : 'never signed in'}`);
       }
-      if (!s.accounts.length) console.log('  none yet: `agent-office accounts invite <name> --admin` makes you one');
+      if (!s.accounts.length) console.log(`  none yet: \`${edition.command} accounts invite <name> --admin\` makes you one`);
       if (s.invites.length) {
         console.log(`\nOpen invites (${s.invites.length}):`);
         for (const v of s.invites) console.log(`  ${(v.name ?? '(they pick)').padEnd(NAME_MAX)}  ${v.role.padEnd(6)}  by ${v.createdBy}, until ${day(v.expiresAt)}  /join#${v.token}`);
@@ -372,7 +373,7 @@ export function accountsCommand(argv: string[]): number {
     case 'password': {
       if (arg !== 'on' && arg !== 'off') return usage('password takes on or off');
       if (arg === 'off' && !accounts.state(new Set()).accounts.some((a) => a.role === 'admin')) {
-        return fail('make an admin account first (`agent-office accounts invite <name> --admin`), or nobody could manage the office');
+        return fail(`make an admin account first (\`${edition.command} accounts invite <name> --admin\`), or nobody could manage the office`);
       }
       accounts.setSharedPassword(arg === 'on');
       console.log(arg === 'on' ? 'The shared office password works again.' : 'The shared office password no longer signs anyone in; people who used it are signed out within seconds.');
@@ -384,12 +385,12 @@ export function accountsCommand(argv: string[]): number {
 }
 
 function usage(msg: string): number {
-  console.error(`agent-office accounts: ${msg}\n`);
-  process.stderr.write(HELP);
+  console.error(`${edition.command} accounts: ${msg}\n`);
+  process.stderr.write(help());
   return 2;
 }
 
 function fail(msg: string): number {
-  console.error(`agent-office accounts: ${msg}`);
+  console.error(`${edition.command} accounts: ${msg}`);
   return 1;
 }

@@ -11,7 +11,7 @@ function findAppDir(): string | undefined {
   for (let i = 0; i < 5; i++, dir = path.dirname(dir)) {
     try {
       const name = JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8')).name;
-      if (name === 'agent-office' || name === 'hearth' || name === 'hearth-hq') return dir;
+      if (name === 'agent-office' || name === 'agent-express' || name === 'agent-express-fun-edition') return dir;
     } catch {
       // keep looking
     }

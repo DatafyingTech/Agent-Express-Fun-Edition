@@ -381,7 +381,7 @@ interface MergeStatus {
 
 const conflicted = (d: GhPullDetail) => d.state === 'OPEN' && !d.isDraft && (d.mergeable === 'CONFLICTING' || d.mergeStateStatus === 'DIRTY');
 
-/** Whether it can merge, in a sentence (the 3D office's mergeStatus, in Hearth's words). */
+/** Whether it can merge, in a sentence (the 3D office's mergeStatus, in the app's words). */
 function mergeStatus(d: GhPullDetail): MergeStatus {
   const failing = d.checks.filter((c) => c.state === 'fail').length;
   const pending = d.checks.filter((c) => c.state === 'pending').length;

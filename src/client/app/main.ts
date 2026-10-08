@@ -1,4 +1,4 @@
-// Hearth (/app): the shell. Signs in (or sends her to the door), opens the office's socket, turns
+// Agent Express (/app), the app view: the shell. Signs in (or sends her to the door), opens the office's socket, turns
 // the URL hash into a screen, keeps the server's floor in step with the space on screen, and draws
 // the frame around it: bottom tabs on a phone, an icon rail on a tablet, a sidebar on a desktop.
 //
@@ -26,6 +26,7 @@ import { loadProfile, store, type Profile, type Topic } from '../state';
 import { randomLook } from '../../shared/avatar';
 import type { AppContext, Route, View } from './context';
 import { icon } from './icons';
+import { APP_NAME } from '../../shared/edition';
 import {
   actionRows,
   actionSheet,
@@ -149,9 +150,9 @@ const depth = (r: Route) => (r.view === 'terminal' || r.view === 'changes' ? 3 :
 const tabOf = (r: Route): 'home' | 'chats' | 'settings' => (r.view === 'chats' || r.view === 'chat' || r.view === 'terminal' || r.view === 'changes' ? 'chats' : r.view === 'settings' ? 'settings' : 'home');
 
 /** The history index of each entry we made, so Back knows whether there's an in-app screen behind. */
-let baseIndex = typeof history.state?.hearth === 'number' ? (history.state.hearth as number) : 0;
+let baseIndex = typeof history.state?.appNav === 'number' ? (history.state.appNav as number) : 0;
 let curIndex = baseIndex;
-if (typeof history.state?.hearth !== 'number') history.replaceState({ ...(history.state ?? {}), hearth: curIndex }, '');
+if (typeof history.state?.appNav !== 'number') history.replaceState({ ...(history.state ?? {}), appNav: curIndex }, '');
 
 let route: Route = parse(location.hash);
 let prevRoute: Route | null = null;
@@ -164,18 +165,18 @@ function go(r: Route, opts: { replace?: boolean } = {}) {
   }
   const href = hrefOf(r);
   if (href === location.hash && !opts.replace) return;
-  if (opts.replace) history.replaceState({ hearth: curIndex }, '', href);
-  else history.pushState({ hearth: ++curIndex }, '', href);
+  if (opts.replace) history.replaceState({ appNav: curIndex }, '', href);
+  else history.pushState({ appNav: ++curIndex }, '', href);
   onLocation();
 }
 
 function onLocation() {
-  const st = history.state?.hearth;
+  const st = history.state?.appNav;
   if (typeof st === 'number') curIndex = st;
   else {
     // A plain link (<a href="#/…">) made this entry: number it.
     curIndex++;
-    history.replaceState({ ...(history.state ?? {}), hearth: curIndex }, '');
+    history.replaceState({ ...(history.state ?? {}), appNav: curIndex }, '');
   }
   if (curIndex < baseIndex) baseIndex = curIndex;
   setInAppSteps(curIndex - baseIndex);
@@ -194,8 +195,8 @@ const shell = document.getElementById('a-shell')!;
 const main = document.getElementById('a-main')!;
 const bannerSlot = h('div.a-banner-slot', { role: 'status', 'aria-live': 'polite' });
 const stage = h('div.a-stage', {}, bannerSlot);
-const nav = h('nav.a-nav', { 'aria-label': 'Hearth' });
-const tabbar = h('nav.a-tabbar', { 'aria-label': 'Hearth' });
+const nav = h('nav.a-nav', { 'aria-label': APP_NAME });
+const tabbar = h('nav.a-tabbar', { 'aria-label': APP_NAME });
 // The tab bar's sliding pill stays put across redraws so it can glide from tab to tab.
 const tabPill = h('span.a-tabbar__pill', { 'aria-hidden': 'true' });
 const tabItems = h('div', { style: 'display:contents' });
@@ -356,7 +357,7 @@ function renderNav() {
     h('span.a-nav__rail-label', {}, 'Create'),
   );
   nav.replaceChildren(
-    h('a.a-wordmark', { href: '#/home', 'aria-label': 'Hearth, home' }, 'Hearth', h('span.a-wordmark__dot', { 'aria-hidden': 'true' })),
+    h('a.a-wordmark', { href: '#/home', 'aria-label': `${APP_NAME}, home` }, APP_NAME, h('span.a-wordmark__dot', { 'aria-hidden': 'true' })),
     createItem,
     navItem('#/home', 'home', 'Home', tab === 'home' && !onFloor),
     navItem('#/chats', 'chats', 'Chats', tab === 'chats', n),
@@ -573,7 +574,7 @@ function render() {
   document.body.classList.toggle('has-composer', r.view === 'chat');
   // Full-screen places where the composer or key bar owns the bottom edge: no floating tab bar.
   document.body.classList.toggle('is-immersive', r.view === 'chat' || r.view === 'terminal' || r.view === 'changes');
-  if (r.view !== 'chat') document.title = 'Hearth';
+  if (r.view !== 'chat') document.title = APP_NAME;
   renderNav();
   paintAura();
 
@@ -755,7 +756,7 @@ setInterval(() => {
     }
   }
 }
-if (!location.hash) history.replaceState({ hearth: curIndex }, '', '#/home');
+if (!location.hash) history.replaceState({ appNav: curIndex }, '', '#/home');
 render();
 void signedIn().then((ok) => {
   if (!ok) return;

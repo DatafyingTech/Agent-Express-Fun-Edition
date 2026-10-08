@@ -14,7 +14,7 @@ body:
         what you paste may contain private things:
 
         - The doctor output prints your workspace folder and your computer's Tailscale name.
-        - `.hearth/logs/hearth.log` can contain file names and bits of what your teammates printed.
+        - `.agent-express/logs/agent-express.log` can contain file names and bits of what your teammates printed.
         - Screenshots show your chats, your teammates' work and your notes.
 
         **Only paste what matters, and check it before you post.** Never paste your password.
@@ -44,7 +44,7 @@ body:
   - type: textarea
     id: log
     attributes:
-      label: Relevant lines from `.hearth/logs/hearth.log`
+      label: Relevant lines from `.agent-express/logs/agent-express.log`
       description: The last 30-40 lines, or the lines around the failure. Redact anything private.
       render: text
     validations:
@@ -55,8 +55,8 @@ body:
     attributes:
       label: Which app?
       options:
-        - Hearth
-        - Hearth HQ (the 3D office)
+        - Agent Express
+        - Agent Express (Fun Edition), the 3D office
     validations:
       required: true
 

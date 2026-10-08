@@ -1,7 +1,7 @@
 {
-  "name": "hearth-hq",
+  "name": "agent-express-fun-edition",
   "version": "1.0.0",
-  "description": "Your team of Claude Code agents in a 3D office: walk around, sit them at desks and hold meetings at the table. Includes the Hearth app for your phone, over Tailscale.",
+  "description": "Your team of Claude Code agents in a 3D office: walk around, sit them at desks and hold meetings at the table. Includes the Agent Express app for your phone, over Tailscale.",
   "keywords": [
     "claude-code",
     "agents",
@@ -13,19 +13,19 @@
     "tailscale",
     "self-hosted"
   ],
-  "homepage": "https://github.com/DatafyingTech/Hearth-HQ#readme",
+  "homepage": "https://github.com/DatafyingTech/Agent-Express-Fun-Edition#readme",
   "bugs": {
-    "url": "https://github.com/DatafyingTech/Hearth-HQ/issues"
+    "url": "https://github.com/DatafyingTech/Agent-Express-Fun-Edition/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DatafyingTech/Hearth-HQ.git"
+    "url": "git+https://github.com/DatafyingTech/Agent-Express-Fun-Edition.git"
   },
   "license": "MIT",
   "author": "Datafying Tech",
   "type": "module",
   "bin": {
-    "hearth-hq": "bin/hearth-hq.js"
+    "agent-express-fun": "bin/agent-express-fun.js"
   },
   "files": [
     "bin",
@@ -43,7 +43,7 @@
     "build:server": "tsc -p tsconfig.server.json",
     "pretypecheck": "node scripts/roster.mjs",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit",
-    "start": "node bin/hearth-hq.js",
+    "start": "node bin/agent-express-fun.js",
     "prepare": "npm run build",
     "roster": "node scripts/roster.mjs",
     "postinstall": "node scripts/roster.mjs"

@@ -1020,7 +1020,7 @@ export type ClientMsg =
   | { t: 'profile'; name: string; color: string; look: Look }
   /**
    * With `issue`, the worker is there for that GitHub issue: it's assigned on GitHub (so it moves to In progress) and taken off the queue.
-   * `label` (Hearth: a general helper's job) is the name a helper with no `role` goes by, as a meeting chair's job is.
+   * `label` (the app: a general helper's job) is the name a helper with no `role` goes by, as a meeting chair's job is.
    */
   | { t: 'worker.spawn'; deskId: string; prompt?: string; worktree?: boolean; kind?: WorkerKind; provider?: AgentProvider; model?: string; effort?: AgentEffort; issue?: number; role?: string; label?: string }
   /** Seats several teammates from the roster (shared/team.ts) at free desks on a floor, any floor, each with the shared task if there is one. */

@@ -1,4 +1,4 @@
-/* Hearth: teammate screens (owned by the teammate agent, see docs/app/REDESIGN.md). Tokens only (--a-*), no raw hex.
+/* Agent Express (/app): teammate screens (owned by the teammate agent, see docs/app/REDESIGN.md). Tokens only (--a-*), no raw hex.
  *
  *   .a-tm-chat      the conversation (views/chat.ts): glass header over the log, glass composer
  *   .a-tm-sheet     the teammate sheet: role card, facts, actions

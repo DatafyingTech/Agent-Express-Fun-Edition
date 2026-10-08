@@ -64,7 +64,7 @@ Knowing this makes it easier to tell a real problem from the design working as i
 - A member account doing admin-only things (inviting, revoking, changing roles or settings)
 - Anything that sends your chats, files, memory or usage off the computer, other than Claude Code's
   own traffic to Anthropic
-- Anything in `install.ps1`, `install.sh`, `hearth.mjs` or the helper scripts that could be hijacked
+- Anything in `install.ps1`, `install.sh`, `agent-express.mjs` or the helper scripts that could be hijacked
   to run untrusted code, or that changes more than it says it does (for example in
   `~/.claude.json`, beyond marking the workspace trusted after a backup)
 

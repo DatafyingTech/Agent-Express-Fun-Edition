@@ -20,7 +20,7 @@ void fetch('/api/login', { cache: 'no-store' })
     nameInput.required = !shared;
     nameNote.hidden = !shared;
     sub.textContent =
-      edition.id === 'hearth'
+      edition.id === 'express'
         ? shared
           ? 'Sign in with your account, or just the password.'
           : 'Sign in with your own account.'

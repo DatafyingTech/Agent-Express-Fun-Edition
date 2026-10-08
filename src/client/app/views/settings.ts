@@ -47,13 +47,14 @@ import {
   spaceColor,
   spaceEmoji,
   spaceName,
+  SPACES_EVENT,
   splitSpaceName,
   themePref,
   timeAgo,
   toast,
   type ThemePref,
 } from '../ui';
-import { commandLine, edition } from '../../../shared/edition';
+import { APP_NAME, commandLine, edition } from '../../../shared/edition';
 
 // =================================================================================================
 // Glyphs this screen needs beyond icons.ts (Lucide geometry, same 24 grid and 1.75 stroke).
@@ -506,7 +507,7 @@ export const settingsView: View = (root, ctx) => {
   const paintRoot = () => list.paint();
   for (const t of ['me', 'usage', 'limits', 'notify', 'upgrade', 'accounts', 'floors', 'team', 'peers'] as Topic[]) ctx.on(t, paintRoot);
   const onSpaces = () => paintRoot();
-  window.addEventListener('hearth:spaces', onSpaces);
+  window.addEventListener(SPACES_EVENT, onSpaces);
 
   // ---- The page over it -------------------------------------------------------------------------
   let shown: Page | null = null;
@@ -596,7 +597,7 @@ export const settingsView: View = (root, ctx) => {
   return () => {
     pageCleanup();
     window.removeEventListener('hashchange', onHash);
-    window.removeEventListener('hearth:spaces', onSpaces);
+    window.removeEventListener(SPACES_EVENT, onSpaces);
     wideMq.removeEventListener('change', onWide);
   };
 };
@@ -645,7 +646,7 @@ function buildRoot(ctx: AppContext) {
   const rowNotify = row({ lead: tile('bell', 'rose'), title: 'Notifications', value: vNotify, href: hrefPage('notifications'), attrs: { 'data-page': 'notifications' } });
   const rowPeople = row({ lead: tile('key', 'sage'), title: 'People & access', value: vPeople, href: hrefPage('people'), attrs: { 'data-page': 'people' } });
   const rowUpdates = row({ lead: tile('update', 'aqua'), title: 'Updates', value: vUpdates, href: hrefPage('updates'), attrs: { 'data-page': 'updates' } });
-  const rowAbout = row({ lead: tile('info', 'stone'), title: 'About Hearth', value: vAbout, href: hrefPage('about'), attrs: { 'data-page': 'about' } });
+  const rowAbout = row({ lead: tile('info', 'stone'), title: `About ${APP_NAME}`, value: vAbout, href: hrefPage('about'), attrs: { 'data-page': 'about' } });
   const officeGroup = section('The office', [rowPeople, rowUpdates, rowAbout]);
 
   const version = h('span.a-set-colophon__v.a-num');
@@ -657,7 +658,7 @@ function buildRoot(ctx: AppContext) {
     today,
     section(null, [rowAppearance, rowSpaces, rowNotify]),
     officeGroup,
-    h('p.a-set-colophon', {}, h('span.a-set-colophon__mark', {}, 'Hearth'), version),
+    h('p.a-set-colophon', {}, h('span.a-set-colophon__mark', {}, APP_NAME), version),
   );
   Array.from(el.children).forEach((c, i) => (c as HTMLElement).style.setProperty('--i', String(Math.min(i, 6))));
   // The rise plays once, when the list first appears.
@@ -771,7 +772,7 @@ function youPage(env: PageEnv): HTMLElement {
     saveProfile({ name: account ? p.name.replace(/\s*📱\s*$/u, '') : name, color, look: p.look });
     ctx.net.send({ t: 'profile', name: p.name, color, look: p.look });
     paintHero();
-    window.dispatchEvent(new Event('hearth:spaces')); // the list and the sidebar pick up the new name
+    window.dispatchEvent(new Event(SPACES_EVENT)); // the list and the sidebar pick up the new name
   };
 
   // ---- Name ----
@@ -865,7 +866,7 @@ function youPage(env: PageEnv): HTMLElement {
     else apply();
     paintTheme();
     if (focus) themeBtns[THEMES.findIndex((t) => t.id === p)].focus();
-    window.dispatchEvent(new Event('hearth:spaces'));
+    window.dispatchEvent(new Event(SPACES_EVENT));
   };
   themeGroup.addEventListener('keydown', (e) => {
     const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
@@ -889,7 +890,7 @@ function youPage(env: PageEnv): HTMLElement {
     tone: 'danger',
     center: true,
     onClick: async () => {
-      const ok = await confirmDialog({ title: 'Sign out of Hearth?', body: 'Your teammates keep working. You can sign back in any time.', action: 'Sign out', danger: true });
+      const ok = await confirmDialog({ title: `Sign out of ${APP_NAME}?`, body: 'Your teammates keep working. You can sign back in any time.', action: 'Sign out', danger: true });
       if (ok) await signOut();
     },
   });
@@ -1227,7 +1228,7 @@ function peoplePage(env: PageEnv): HTMLElement {
       anchor,
       [
         { label: 'Copy the link', icon: 'external', onSelect: () => void copyWithToast(inviteLink(v), 'Link copied') },
-        { label: 'Share…', icon: 'send', onSelect: () => void shareOrCopy(inviteLink(v), 'Your invite to Hearth') },
+        { label: 'Share…', icon: 'send', onSelect: () => void shareOrCopy(inviteLink(v), `Your invite to ${APP_NAME}`) },
         {
           label: 'Cancel this invite',
           icon: 'remove',
@@ -1402,7 +1403,7 @@ function peoplePage(env: PageEnv): HTMLElement {
               'span.a-set-linkcard__actions',
               {},
               button({ label: 'Copy link', icon: 'external', size: 'sm', onClick: () => void copyWithToast(link, 'Link copied') }),
-              button({ label: 'Share…', icon: 'send', size: 'sm', onClick: () => void shareOrCopy(link, 'Your invite to Hearth') }),
+              button({ label: 'Share…', icon: 'send', size: 'sm', onClick: () => void shareOrCopy(link, `Your invite to ${APP_NAME}`) }),
             ),
           ),
         );
@@ -1947,7 +1948,7 @@ function aboutPage(env: PageEnv): HTMLElement {
   const hero = h(
     'div.a-set-about',
     {},
-    h('span.a-set-about__mark', {}, 'Hearth', h('span.a-set-about__dot', { 'aria-hidden': 'true' })),
+    h('span.a-set-about__mark', {}, APP_NAME, h('span.a-set-about__dot', { 'aria-hidden': 'true' })),
     h('span.a-set-about__line', {}, 'The whole office, ', h('em', {}, 'quietly'), '.'),
   );
   return pageFrame(

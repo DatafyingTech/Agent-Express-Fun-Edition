@@ -1,4 +1,4 @@
-/* Hearth: meetings screens (owned by the meetings agent, see docs/app/REDESIGN.md). Tokens only (--a-*), no raw hex.
+/* Agent Express (/app): meetings screens (owned by the meetings agent, see docs/app/REDESIGN.md). Tokens only (--a-*), no raw hex.
  *
  * The Meetings segment (views/meetings.ts), the Call a meeting sheet (views/meeting.ts) and the
  * meeting reader. The room's own look: a round table seen from above, glass and light, Instrument

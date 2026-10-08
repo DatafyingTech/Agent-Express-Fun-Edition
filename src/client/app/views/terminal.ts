@@ -14,6 +14,7 @@
 import type { AppContext, View } from '../context';
 import type { Net } from '../../net';
 import type { ServerMsg, WorkerInfo } from '../../../shared/protocol';
+import { APP_NAME } from '../../../shared/edition';
 import type { Terminal as XTerminal } from '@xterm/xterm';
 import type { FitAddon as XFitAddon } from '@xterm/addon-fit';
 import { avatar, backButton, button, h, isResting, setAvatarStatus, spaceColor, spaceName, statusWords, toast, uiStatus } from '../ui';
@@ -358,7 +359,7 @@ export const terminalView: View = (root, ctx, route) => {
     );
     return () => cleanups.forEach((f) => f());
   }
-  document.title = `${w0.name} · Terminal · Hearth`;
+  document.title = `${w0.name} · Terminal · ${APP_NAME}`;
 
   // ---- Chrome ----
   const who = avatar(w0, 32);
@@ -565,7 +566,7 @@ export const terminalView: View = (root, ctx, route) => {
     try {
       text = await navigator.clipboard.readText();
     } catch {
-      toast('Your browser didn’t let Hearth read the clipboard. Long-press the command line and paste there.', 'warn');
+      toast(`Your browser didn’t let ${APP_NAME} read the clipboard. Long-press the command line and paste there.`, 'warn');
       return;
     }
     if (!text) return toast('The clipboard is empty.');

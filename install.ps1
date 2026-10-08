@@ -1,9 +1,10 @@
 <#
-Hearth installer and helper for Windows 10/11 (Windows PowerShell 5.1 or PowerShell 7).
+The Agent Express installer and helper for Windows 10/11 (Windows PowerShell 5.1 or PowerShell 7),
+for both editions: Agent Express and Agent Express (Fun Edition).
 
-One line, from any PowerShell window (it downloads Hearth, then installs it):
+One line, from any PowerShell window (it downloads the app, then installs it):
 
-  irm https://raw.githubusercontent.com/DatafyingTech/Hearth-HQ/main/install.ps1 | iex
+  irm https://raw.githubusercontent.com/DatafyingTech/Agent-Express-Fun-Edition/main/install.ps1 | iex
 
 or double-click install.bat in a downloaded copy. With options, from a copy:
 
@@ -14,18 +15,19 @@ What `install` does (every step is skipped when it's already done, so running it
      missing (winget first, the official installers otherwise)
   2. checks that Claude Code is signed in, and offers to sign in
   3. installs the app's packages (npm ci) and builds it (npm run build)
-  4. creates your workspace (default %USERPROFILE%\Hearth) with a starter CLAUDE.md and memory/,
-     as the first floor, and tells Claude Code to trust that folder
+  4. creates your workspace (default %USERPROFILE%\AgentExpress, or \AgentExpressFun for the Fun
+     Edition) with a starter CLAUDE.md and memory/, as the first floor, and tells Claude Code to
+     trust that folder
   5. sets the password your phone signs in with (yours, or a generated one it shows you)
-  6. optionally starts Hearth when you sign in to Windows (a hidden per-user scheduled task), and
+  6. optionally starts the app when you sign in to Windows (a hidden per-user scheduled task), and
      adds Start Menu and desktop shortcuts
-  7. starts Hearth, brings Tailscale up and shares the app on your tailnet with `tailscale serve`
+  7. starts the app, brings Tailscale up and shares the app on your tailnet with `tailscale serve`
   8. prints the address to open on your phone
 
 Actions (the helper .bat files run these):
   install    (default) everything above
-  start      start Hearth in the background (and -Open the browser)
-  stop       stop Hearth and its agents
+  start      start the app in the background (and -Open the browser)
+  stop       stop the app and its agents
   restart    stop, then start
   status     is it running, and where
   doctor     check every requirement and the running app, and print fixes
@@ -35,12 +37,14 @@ Actions (the helper .bat files run these):
              (your workspace and this folder stay; it tells you what to delete by hand)
 
 Options:
-  -Edition hearth|hq   which app this is (normally detected; hq = Hearth HQ, the 3D office)
-  -Port <n>            port on this PC (default 4600 for Hearth, 4610 for Hearth HQ)
-  -Workspace <dir>     your workspace folder (default %USERPROFILE%\Hearth or \HearthHQ)
-  -InstallDir <dir>    where the one-line install puts the app (default %LOCALAPPDATA%\Programs\Hearth)
+  -Edition express|fun which app this is (normally detected; fun = Agent Express (Fun Edition),
+                       the 3D office)
+  -Port <n>            port on this PC (default 4600 for Agent Express, 4610 for the Fun Edition)
+  -Workspace <dir>     your workspace folder (default %USERPROFILE%\AgentExpress or \AgentExpressFun)
+  -InstallDir <dir>    where the one-line install puts the app (default
+                       %LOCALAPPDATA%\Programs\Agent-Express or \Agent-Express-Fun-Edition)
   -NoTailscale         don't install, start or configure Tailscale (this PC only)
-  -NoAutostart         don't start Hearth at sign-in (and don't ask); -Autostart: do, without asking
+  -NoAutostart         don't start it at sign-in (and don't ask); -Autostart: do, without asking
   -NoShortcut          no Start Menu or desktop shortcuts; -NoDesktopShortcut: Start Menu only
   -NoStart             set everything up but don't start it
   -ResetPassword       ask for (or generate) a new password even if one is set
@@ -48,9 +52,13 @@ Options:
   -DryRun              report what it would do, change nothing
   -Force               reinstall packages and rebuild even when they look up to date
 
-Environment (for the one-line install, which can't take options): HEARTH_EDITION, HEARTH_PORT,
-HEARTH_WORKSPACE, HEARTH_INSTALL_DIR, HEARTH_YES=1, HEARTH_DRY_RUN=1, HEARTH_NO_TAILSCALE=1,
-HEARTH_NO_AUTOSTART=1, and HEARTH_PASSWORD (the sign-in password, instead of being asked).
+Environment (for the one-line install, which can't take options): AGENT_EXPRESS_EDITION,
+AGENT_EXPRESS_PORT, AGENT_EXPRESS_WORKSPACE, AGENT_EXPRESS_INSTALL_DIR, AGENT_EXPRESS_YES=1,
+AGENT_EXPRESS_DRY_RUN=1, AGENT_EXPRESS_NO_TAILSCALE=1, AGENT_EXPRESS_NO_AUTOSTART=1, and
+AGENT_EXPRESS_PASSWORD (the sign-in password, instead of being asked).
+
+The apps were first called Hearth and Hearth HQ. Their edition ids (hearth, hq), the HEARTH_*
+variables and an install's old .hearth\ folder all still work.
 #>
 [CmdletBinding()]
 param(
@@ -78,21 +86,48 @@ param(
 
 # The export fills these in for each repo. Left as they are (a development checkout), the edition is
 # worked out from package.json and the git remote.
-$BakedEdition = 'hq'
+$BakedEdition = 'fun'
 # The options as given, for handing on to another copy of this script (the bootstrap).
 $ScriptParams = @{} + $PSBoundParameters
 # This file's path when it runs as a script file; empty under `irm | iex` (and in a scriptblock).
 $ScriptPath = if ($MyInvocation.MyCommand.CommandType -eq 'ExternalScript') { $MyInvocation.MyCommand.Path } else { '' }
-$BakedRepo = 'DatafyingTech/Hearth-HQ'
+$BakedRepo = 'DatafyingTech/Agent-Express-Fun-Edition'
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
 
 $Editions = @{
-    hearth = @{ Name = 'Hearth'; Port = 4600; Workspace = 'Hearth'; Task = 'Hearth'; Repo = 'DatafyingTech/Hearth'; AppDir = 'Hearth' }
-    hq     = @{ Name = 'Hearth HQ'; Port = 4610; Workspace = 'HearthHQ'; Task = 'Hearth HQ'; Repo = 'DatafyingTech/Hearth-HQ'; AppDir = 'Hearth-HQ' }
+    express = @{ Name = 'Agent Express'; Port = 4600; Workspace = 'AgentExpress'; Task = 'Agent Express'; Repo = 'DatafyingTech/Agent-Express'; AppDir = 'Agent-Express'; OldTask = 'Hearth' }
+    fun     = @{ Name = 'Agent Express (Fun Edition)'; Port = 4610; Workspace = 'AgentExpressFun'; Task = 'Agent Express (Fun Edition)'; Repo = 'DatafyingTech/Agent-Express-Fun-Edition'; AppDir = 'Agent-Express-Fun-Edition'; OldTask = 'Hearth HQ' }
 }
+
+# The edition ids from before the rename, still accepted.
+function Resolve-Edition([string]$ed) {
+    $k = "$ed".Trim().ToLowerInvariant()
+    if ($k -eq 'hearth') { return 'express' }
+    if ($k -eq 'hq') { return 'fun' }
+    return $k
+}
+
+# The repository to download an edition from: the one this copy was exported for (a fork keeps its
+# own), unless it's told to install the other edition.
+function Get-Repo([string]$ed) {
+    if ($BakedRepo -notmatch '^\{\{' -and $ed -eq (Resolve-Edition $BakedEdition)) { return $BakedRepo }
+    return $Editions[$ed].Repo
+}
+
+# AGENT_EXPRESS_<name> from the environment, or HEARTH_<name>, its name before the rename.
+function Get-Env([string]$name) {
+    $v = [Environment]::GetEnvironmentVariable("AGENT_EXPRESS_$name")
+    if (-not $v) { $v = [Environment]::GetEnvironmentVariable("HEARTH_$name") }
+    return $v
+}
+
+# Each install keeps its settings, logs and state in this folder of the app (an install from before
+# the rename has it as .hearth, which Move-OldState renames).
+$StateName = '.agent-express'
+$OldStateName = '.hearth'
 
 # ------------------------------------------------------------------ output and questions
 function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
@@ -109,7 +144,7 @@ function Die($msg, $hint) {
     Write-Host '  STOPPED' -ForegroundColor Red
     Write-Host "  $msg" -ForegroundColor Red
     if ($hint) { Write-Host "  -> $hint" -ForegroundColor Yellow }
-    throw 'HEARTH_STOPPED'
+    throw 'AGENT_EXPRESS_STOPPED'
 }
 
 function Test-Truthy($v) { return ($v -and $v -ne '0' -and $v -ne 'false') }
@@ -233,8 +268,8 @@ function Add-UserPath([string]$dir) {
         Change "add $dir to your user PATH" {
             $key.SetValue('Path', ((@(($cur -split ';') | Where-Object { $_ }) + $dir) -join ';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
             # Setting and clearing a variable tells Explorer to reload the environment for new terminals.
-            [Environment]::SetEnvironmentVariable('HEARTH_PATH_REFRESH', '1', 'User')
-            [Environment]::SetEnvironmentVariable('HEARTH_PATH_REFRESH', $null, 'User')
+            [Environment]::SetEnvironmentVariable('AGENT_EXPRESS_PATH_REFRESH', '1', 'User')
+            [Environment]::SetEnvironmentVariable('AGENT_EXPRESS_PATH_REFRESH', $null, 'User')
             Ok "added $dir to your PATH (new terminals will see it)"
         } | Out-Null
     } finally { $key.Close() }
@@ -247,24 +282,44 @@ function Test-Checkout([string]$dir) {
 }
 
 function Get-DetectedEdition([string]$root) {
-    if ($BakedEdition -notmatch '^\{\{') { return $BakedEdition }
+    if ($BakedEdition -notmatch '^\{\{') { return (Resolve-Edition $BakedEdition) }
     try {
         $name = (Get-Content -Raw -LiteralPath (Join-Path $root 'package.json') | ConvertFrom-Json).name
-        if ($name -match 'hq') { return 'hq' }
-        if ($name -match 'hearth') { return 'hearth' }
+        if ($name -match 'agent-express-fun') { return 'fun' }
+        if ($name -match 'agent-express') { return 'express' }
     } catch {}
     try {
         $remote = (Invoke-Capture 'git' @('-C', $root, 'remote', 'get-url', 'origin') 10).Out
-        if ($remote -match 'hearth-hq') { return 'hq' }
+        if ($remote -match 'agent-express-fun') { return 'fun' }
     } catch {}
-    return 'hearth'
+    return 'express'
 }
 
 $SettingsKeys = @('EDITION', 'PORT', 'WORKSPACE', 'AGENT', 'AGENT_ARGS', 'MAX_WORKERS', 'TAILSCALE', 'AUTOSTART', 'SHORTCUTS')
 
+# Renames an install's .hearth folder (from before the rename) to .agent-express.
+function Move-OldState([string]$root) {
+    $old = Join-Path $root $OldStateName
+    $new = Join-Path $root $StateName
+    if ((Test-Path -LiteralPath $new) -or -not (Test-Path -LiteralPath $old)) { return }
+    Change "rename the settings folder $old to $StateName (the app's new name)" {
+        # An old copy still running holds its log open there; the settings are read from the old
+        # folder this once and saved in the new one, so nothing is lost.
+        try { Rename-Item -LiteralPath $old -NewName $StateName -ErrorAction Stop; Ok "settings moved to $new" }
+        catch { Warn "couldn't rename $old ($($_.Exception.Message)); its settings are carried over instead" }
+    } | Out-Null
+}
+
+function Get-StateDir([string]$root) {
+    $new = Join-Path $root $StateName
+    # A dry run leaves an old .hearth folder where it is, and reads it there.
+    if (-not (Test-Path -LiteralPath $new) -and (Test-Path -LiteralPath (Join-Path $root $OldStateName))) { return (Join-Path $root $OldStateName) }
+    return $new
+}
+
 function Read-Settings([string]$root) {
     $s = @{}
-    $f = Join-Path $root '.hearth\settings.env'
+    $f = Join-Path (Get-StateDir $root) 'settings.env'
     if (Test-Path -LiteralPath $f) {
         foreach ($line in [IO.File]::ReadAllLines($f)) {
             if ($line -match '^\s*([A-Z_][A-Z0-9_]*)\s*=(.*)$') { $s[$Matches[1]] = $Matches[2].Trim() }
@@ -274,8 +329,8 @@ function Read-Settings([string]$root) {
 }
 
 function Write-Settings([string]$root, [hashtable]$s) {
-    $dir = Join-Path $root '.hearth'
-    $lines = @('# Hearth settings, written by the installer. Edit, then run restart (stop.bat, start.bat).')
+    $dir = Join-Path $root $StateName
+    $lines = @("# $($script:E.Name) settings, written by the installer. Edit, then run restart (stop.bat, start.bat).")
     foreach ($k in $SettingsKeys) { $lines += "$k=$($s[$k])" }
     Change "save settings to $dir\settings.env" {
         [IO.Directory]::CreateDirectory($dir) | Out-Null
@@ -290,14 +345,15 @@ function Write-Settings([string]$root, [hashtable]$s) {
 # then run that copy's installer with the same options.
 function Invoke-Bootstrap {
     $ed = $Edition
-    if (-not $ed) { $ed = $env:HEARTH_EDITION }
+    if (-not $ed) { $ed = Get-Env 'EDITION' }
     if (-not $ed -and $BakedEdition -notmatch '^\{\{') { $ed = $BakedEdition }
-    if (-not $ed) { $ed = 'hearth' }
-    if (-not $Editions.ContainsKey($ed)) { Die "-Edition is hearth or hq, not $ed" }
+    if (-not $ed) { $ed = 'express' }
+    $ed = Resolve-Edition $ed
+    if (-not $Editions.ContainsKey($ed)) { Die "-Edition is express or fun, not $ed" }
     $E = $Editions[$ed]
-    $repo = if ($BakedRepo -notmatch '^\{\{') { $BakedRepo } else { $E.Repo }
+    $repo = Get-Repo $ed
     $dir = $InstallDir
-    if (-not $dir) { $dir = $env:HEARTH_INSTALL_DIR }
+    if (-not $dir) { $dir = Get-Env 'INSTALL_DIR' }
     if (-not $dir) { $dir = Join-Path $env:LOCALAPPDATA "Programs\$($E.AppDir)" }
     $dir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($dir)
 
@@ -317,7 +373,7 @@ function Invoke-Bootstrap {
             } | Out-Null
         }
     } elseif ((Test-Path -LiteralPath $dir) -and @(Get-ChildItem -LiteralPath $dir -Force).Count -gt 0) {
-        Die "$dir already exists and isn't a copy of $($E.Name)." 'Move it out of the way, or pass -InstallDir (or HEARTH_INSTALL_DIR) to install somewhere else.'
+        Die "$dir already exists and isn't a copy of $($E.Name)." 'Move it out of the way, or pass -InstallDir (or AGENT_EXPRESS_INSTALL_DIR) to install somewhere else.'
     } elseif ($git) {
         Change "clone https://github.com/$repo.git into $dir" {
             [IO.Directory]::CreateDirectory((Split-Path -Parent $dir)) | Out-Null
@@ -326,7 +382,7 @@ function Invoke-Bootstrap {
     } else {
         $zipUrl = "https://github.com/$repo/archive/refs/heads/main.zip"
         Change "download $zipUrl and unpack it into $dir" {
-            $tmp = Join-Path ([IO.Path]::GetTempPath()) ("hearth-" + [guid]::NewGuid().ToString('N'))
+            $tmp = Join-Path ([IO.Path]::GetTempPath()) ("agent-express-" + [guid]::NewGuid().ToString('N'))
             try {
                 Invoke-WebRequest -UseBasicParsing -Uri $zipUrl -OutFile "$tmp.zip"
                 Expand-Archive -Path "$tmp.zip" -DestinationPath $tmp -Force
@@ -439,11 +495,11 @@ function Ensure-ClaudeLogin {
         if ((Test-ClaudeLogin) -eq $true) { Ok 'Claude Code is signed in'; return }
     }
     Info 'To sign in: open a new terminal, run  claude  once, and follow the login (a Claude Pro/Max plan or an API key).'
-    Info 'Hearth installs fine without it; agents start working as soon as you have signed in.'
+    Info "$($script:E.Name) installs fine without it; agents start working as soon as you have signed in."
 }
 
 function Ensure-Tailscale {
-    if ($script:NoTs) { Info 'Skipping Tailscale (-NoTailscale): Hearth will only be reachable from this PC.'; return }
+    if ($script:NoTs) { Info "Skipping Tailscale (-NoTailscale): $($script:E.Name) will only be reachable from this PC."; return }
     if (Get-TailscaleExe) { Ok "Tailscale $(((Invoke-Capture (Get-TailscaleExe) @('version') 15).Out -split "`n")[0].Trim())"; return }
     Warn 'Tailscale is not installed. It is the private network that lets your phone reach this PC from anywhere.'
     if (Ask 'Install Tailscale now with winget?' $true -Big) { Install-Winget 'Tailscale.Tailscale' 'Tailscale' | Out-Null }
@@ -455,7 +511,7 @@ function Ensure-Tailscale {
 }
 
 # ------------------------------------------------------------------ the app
-function Get-HearthProcesses {
+function Get-AppProcesses {
     $rootN = ($script:Root.TrimEnd('\') + '\').Replace('/', '\').ToLowerInvariant()
     $wsN = $script:S.WORKSPACE
     if ($wsN) { $wsN = $wsN.TrimEnd('\').Replace('/', '\').ToLowerInvariant() }
@@ -464,7 +520,7 @@ function Get-HearthProcesses {
     # anything else: another office on this PC is none of our business.
     return @($all | Where-Object {
         $cl = "$($_.CommandLine)".Replace('/', '\').ToLowerInvariant()
-        $cl.Contains($rootN) -and ($cl.Contains($rootN + 'hearth.mjs') -or ($wsN -and $cl.Contains($wsN)))
+        $cl.Contains($rootN) -and ($cl.Contains($rootN + 'agent-express.mjs') -or ($wsN -and $cl.Contains($wsN)))
     })
 }
 
@@ -488,7 +544,7 @@ function Get-PortOwner([int]$p) {
 
 function Get-Task { try { return (Get-ScheduledTask -TaskName $script:E.Task -ErrorAction Stop) } catch { return $null } }
 
-function Start-Hearth([switch]$Quiet) {
+function Start-App([switch]$Quiet) {
     $port = [int]$script:S.PORT
     if (Test-Health $port) { if (-not $Quiet) { Ok "$($script:E.Name) is already running on port $port" }; return $true }
     $owner = Get-PortOwner $port
@@ -497,7 +553,7 @@ function Start-Hearth([switch]$Quiet) {
     $task = Get-Task
     Change "start $($script:E.Name) on port $port" {
         if ($task) { Start-ScheduledTask -TaskName $script:E.Task }
-        else { Start-Process -FilePath $node -ArgumentList ('"' + (Join-Path $script:Root 'hearth.mjs') + '"') -WorkingDirectory $script:Root -WindowStyle Hidden | Out-Null }
+        else { Start-Process -FilePath $node -ArgumentList ('"' + (Join-Path $script:Root 'agent-express.mjs') + '"') -WorkingDirectory $script:Root -WindowStyle Hidden | Out-Null }
     } | Out-Null
     if ($script:Dry) { return $true }
     for ($i = 0; $i -lt 90; $i++) {
@@ -505,18 +561,18 @@ function Start-Hearth([switch]$Quiet) {
         Start-Sleep -Seconds 1
     }
     Bad "$($script:E.Name) did not answer on port $port within 90 seconds."
-    Fix "look at the end of $($script:Root)\.hearth\logs\hearth.log, or run doctor.bat"
+    Fix "look at the end of $($script:Root)\$StateName\logs\agent-express.log, or run doctor.bat"
     return $false
 }
 
-function Stop-Hearth([switch]$Quiet) {
+function Stop-App([switch]$Quiet) {
     $task = Get-Task
-    $procs = Get-HearthProcesses
+    $procs = Get-AppProcesses
     if (-not $procs.Count -and -not ($task -and $task.State -eq 'Running')) { if (-not $Quiet) { Ok "$($script:E.Name) is not running" }; return }
     Change "stop $($script:E.Name) ($($procs.Count) process(es))" {
         # The task first, so Windows doesn't count the stop as a crash and restart it.
         if ($task -and $task.State -eq 'Running') { try { Stop-ScheduledTask -TaskName $script:E.Task } catch {} }
-        foreach ($p in (Get-HearthProcesses)) {
+        foreach ($p in (Get-AppProcesses)) {
             # /T takes the agents the office started with it.
             Invoke-Capture "$env:SystemRoot\System32\taskkill.exe" @('/PID', "$($p.ProcessId)", '/T', '/F') 30 | Out-Null
         }
@@ -529,7 +585,7 @@ function Build-App {
     $root = $script:Root
     $npm = Get-NpmCmd
     if (-not $npm -and -not $script:Dry) { Die 'npm was not found next to Node.js.' 'Reinstall Node.js LTS from https://nodejs.org.' }
-    $state = Join-Path $root '.hearth'
+    $state = Join-Path $root $StateName
     $lock = Join-Path $root 'package-lock.json'
     $lockHash = if (Test-Path -LiteralPath $lock) { (Get-FileHash -LiteralPath $lock -Algorithm SHA256).Hash } else { 'none' }
     $depsStamp = Join-Path $state 'deps.stamp'
@@ -542,7 +598,7 @@ function Build-App {
     if ($haveDeps -and $haveBuild -and -not $Force) { Ok 'packages installed and app built (up to date)'; return }
 
     # npm can't replace node-pty's native module while a running office holds it open.
-    if ((Get-HearthProcesses).Count) { $script:WasRunning = $true; Stop-Hearth -Quiet }
+    if ((Get-AppProcesses).Count) { $script:WasRunning = $true; Stop-App -Quiet }
     if (-not $haveDeps -or $Force) {
         Change 'install packages: npm ci' {
             Info 'Installing packages (npm ci). This takes a minute or two the first time...'
@@ -640,7 +696,7 @@ Details go in memory/log/ (dated) and memory/data/. Last updated: $today (setup)
             Invoke-Capture $git @('-C', $ws, 'init', '-b', 'main') 30 | Out-Null
             Invoke-Capture $git @('-C', $ws, 'add', '-A') 30 | Out-Null
             # Named here, so it works before you've ever set up git (only this first commit uses it).
-            $r = Invoke-Capture $git @('-C', $ws, '-c', 'user.name=Hearth', '-c', 'user.email=hearth@localhost', 'commit', '-q', '-m', 'Start my workspace') 30
+            $r = Invoke-Capture $git @('-C', $ws, '-c', 'user.name=Agent Express', '-c', 'user.email=agent-express@localhost', 'commit', '-q', '-m', 'Start my workspace') 30
             if ($r.Code -ne 0) { Warn "git commit in the workspace failed: $($r.Err.Trim())" }
         } | Out-Null
     }
@@ -656,7 +712,7 @@ function Trust-Workspace {
     $node = Get-NodeExe
     if (-not $node) { return }
     $ws = $script:S.WORKSPACE
-    $hm = @((Join-Path $script:Root 'hearth.mjs'), 'trust-workspace', '--workspace', $ws)
+    $hm = @((Join-Path $script:Root 'agent-express.mjs'), 'trust-workspace', '--workspace', $ws)
     $check = Invoke-Capture $node ($hm + '--check') 30
     if ($check.Code -eq 0) { Ok "Claude Code trusts the workspace"; return }
     if ($check.Code -eq 3) { Warn $check.Out.Trim(); return }
@@ -678,10 +734,10 @@ function New-Password {
 
 function Ensure-Password([switch]$Reset) {
     $node = Get-NodeExe
-    $hm = Join-Path $script:Root 'hearth.mjs'
-    $status = if ($node -and (Test-Path -LiteralPath (Join-Path $script:Root '.hearth\settings.env'))) { (Invoke-Capture $node @($hm, 'password-status') 30).Out.Trim() } else { 'none' }
+    $hm = Join-Path $script:Root 'agent-express.mjs'
+    $status = if ($node -and (Test-Path -LiteralPath (Join-Path (Get-StateDir $script:Root) 'settings.env'))) { (Invoke-Capture $node @($hm, 'password-status') 30).Out.Trim() } else { 'none' }
     if ($status -eq 'set' -and -not $Reset) { Ok 'a sign-in password is set (password.bat sets a new one)'; return }
-    $pw = $env:HEARTH_PASSWORD
+    $pw = Get-Env 'PASSWORD'
     $generated = $false
     if (-not $pw -and -not $script:Unattended -and (Test-CanPrompt)) {
         Info 'Choose the password you will sign in with on your phone (at least 8 characters),'
@@ -713,9 +769,9 @@ function Ensure-Password([switch]$Reset) {
 
 # A Start Menu / desktop icon from the app's own picture: an .ico can hold a PNG as it is.
 function Get-Icon {
-    $ico = Join-Path $script:Root '.hearth\hearth.ico'
+    $ico = Join-Path $script:Root "$StateName\app.ico"
     if (Test-Path -LiteralPath $ico) { return $ico }
-    foreach ($png in @('src\client\public\hearth-192.png', 'dist\public\hearth-192.png')) {
+    foreach ($png in @('src\client\public\app-192.png', 'dist\public\app-192.png')) {
         $f = Join-Path $script:Root $png
         if (-not (Test-Path -LiteralPath $f)) { continue }
         try {
@@ -784,7 +840,7 @@ function Remove-Shortcuts {
 function Register-Autostart {
     $name = $script:E.Name
     $node = Get-NodeExe
-    $hm = Join-Path $script:Root 'hearth.mjs'
+    $hm = Join-Path $script:Root 'agent-express.mjs'
     Change "register the '$($script:E.Task)' logon task (hidden, restarts if it crashes)" {
         # conhost --headless runs node's console with no window. The task waits on it, so a crash (a
         # non-zero exit) is something Windows sees and restarts, every minute up to 10 times.
@@ -801,10 +857,25 @@ function Register-Autostart {
     } | Out-Null
 }
 
+# The logon task an install from before the rename made ('Hearth', 'Hearth HQ') starts a runner that
+# isn't there any more, so it goes, when it's this copy's.
+function Remove-OldTask {
+    $old = $script:E.OldTask
+    try { $t = Get-ScheduledTask -TaskName $old -ErrorAction Stop } catch { return }
+    $acts = (@($t.Actions) | ForEach-Object { "$($_.Execute) $($_.Arguments) $($_.WorkingDirectory)" }) -join ' '
+    if (-not $acts.ToLowerInvariant().Contains($script:Root.TrimEnd('\').ToLowerInvariant())) { return }
+    Change "remove the '$old' logon task (the app's name before the rename)" {
+        try { Stop-ScheduledTask -TaskName $old } catch {}
+        Unregister-ScheduledTask -TaskName $old -Confirm:$false
+        Ok "old '$old' logon task removed"
+    } | Out-Null
+}
+
 function Setup-Autostart {
     $name = $script:E.Name
+    Remove-OldTask
     $want = $null
-    if ($NoAutostart -or (Test-Truthy $env:HEARTH_NO_AUTOSTART)) { $want = $false }
+    if ($NoAutostart -or (Test-Truthy (Get-Env 'NO_AUTOSTART'))) { $want = $false }
     elseif ($Autostart) { $want = $true }
     elseif ($script:S.AUTOSTART -eq '1' -or $script:S.AUTOSTART -eq '0') { $want = ($script:S.AUTOSTART -eq '1') }
     else {
@@ -822,15 +893,15 @@ function Setup-Autostart {
 function Get-TsInfo {
     $ts = Get-TailscaleExe
     if (-not $ts) { return $null }
-    $env:HEARTH_TAILSCALE = $ts
-    $r = Invoke-Capture (Get-NodeExe) @((Join-Path $script:Root 'hearth.mjs'), 'tailscale-info') 30
+    $env:AGENT_EXPRESS_TAILSCALE = $ts
+    $r = Invoke-Capture (Get-NodeExe) @((Join-Path $script:Root 'agent-express.mjs'), 'tailscale-info') 30
     $f = $r.Out.Trim() -split "`t"
     return [pscustomobject]@{ State = $f[0]; Dns = $(if ($f.Count -gt 1) { $f[1] } else { '' }); Ip = $(if ($f.Count -gt 2) { $f[2] } else { '' }) }
 }
 
 function Get-ServeTarget([int]$p) {
-    $env:HEARTH_TAILSCALE = Get-TailscaleExe
-    return (Invoke-Capture (Get-NodeExe) @((Join-Path $script:Root 'hearth.mjs'), 'serve-target', "$p") 30).Out.Trim()
+    $env:AGENT_EXPRESS_TAILSCALE = Get-TailscaleExe
+    return (Invoke-Capture (Get-NodeExe) @((Join-Path $script:Root 'agent-express.mjs'), 'serve-target', "$p") 30).Out.Trim()
 }
 
 function Setup-Tailscale {
@@ -952,17 +1023,17 @@ function Invoke-Doctor {
     if (Test-Path -LiteralPath (Join-Path $script:Root 'node_modules')) { Ok 'packages installed' } else { Bad 'packages not installed'; Fix 'run install.bat'; $fails++ }
     if (Test-Path -LiteralPath (Join-Path $script:Root 'dist\server')) { Ok 'app built' } else { Bad 'app not built'; Fix 'run install.bat (or npm run build)'; $fails++ }
 
-    if (-not $script:HasSettings) { Bad 'not installed yet (no .hearth\settings.env)'; Fix 'run install.bat'; return 1 }
+    if (-not $script:HasSettings) { Bad "not installed yet (no $StateName\settings.env)"; Fix 'run install.bat'; return 1 }
     $ws = $script:S.WORKSPACE
     if (Test-Path -LiteralPath $ws) { Ok "workspace $ws" } else { Bad "workspace $ws is missing"; Fix 'run install.bat to recreate it'; $fails++ }
     if (Test-Path -LiteralPath (Join-Path $ws '.git')) { Ok 'workspace is a git repository' } else { Bad 'workspace is not a git repository (agents need one)'; Fix "run install.bat, or: git -C `"$ws`" init"; $fails++ }
-    $hm = Join-Path $script:Root 'hearth.mjs'
+    $hm = Join-Path $script:Root 'agent-express.mjs'
     if ($node) {
         $t = Invoke-Capture $node @($hm, 'trust-workspace', '--check', '--workspace', $ws) 30
         if ($t.Code -eq 0) { Ok 'Claude Code trusts the workspace' }
         else {
             Bad "Claude Code doesn't trust the workspace yet: agents would stop at its 'Do you trust this folder?' question ($($t.Out.Trim()))"
-            Fix 'doctor.bat -Force marks it trusted (stop Hearth first), or run  claude  in the workspace once and answer yes'
+            Fix "doctor.bat -Force marks it trusted (stop $name first), or run  claude  in the workspace once and answer yes"
             $fails++
             if ($Force -and (Ask "Mark $ws as trusted in ~/.claude.json now?" $true)) { Trust-Workspace }
         }
@@ -972,12 +1043,12 @@ function Invoke-Doctor {
 
     $task = Get-Task
     if ($task) { Ok "logon task '$($script:E.Task)': $($task.State)" } elseif ($script:S.AUTOSTART -eq '1') { Bad 'the logon task is missing'; Fix 'run install.bat -Autostart'; $fails++ } else { Info "      no logon task (start it with start.bat)" }
-    $procs = Get-HearthProcesses
+    $procs = Get-AppProcesses
     if (Test-Health $port) { Ok "running: http://localhost:$port answers ($($procs.Count) process(es))" }
     else {
         $owner = Get-PortOwner $port
         if ($owner) { Bad "port $port is taken by $($owner.ProcessName) (pid $($owner.Id)), not $name"; Fix "close it, or install.bat -Port <another>" }
-        else { Bad "not running"; Fix 'start.bat (then look at .hearth\logs\hearth.log if it stops again)' }
+        else { Bad "not running"; Fix "start.bat (then look at $StateName\logs\agent-express.log if it stops again)" }
         $fails++
     }
 
@@ -996,10 +1067,10 @@ function Invoke-Doctor {
         }
     }
 
-    $log = Join-Path $script:Root '.hearth\logs\hearth.log'
+    $log = Join-Path $script:Root "$StateName\logs\agent-express.log"
     if (Test-Path -LiteralPath $log) {
         $errs = @(Get-Content -LiteralPath $log -Tail 200 | Where-Object { $_ -match 'error|EADDRINUSE|unhandled' } | Select-Object -Last 5)
-        if ($errs.Count) { Warn 'recent errors in .hearth\logs\hearth.log:'; $errs | ForEach-Object { Info "        $_" } }
+        if ($errs.Count) { Warn "recent errors in $StateName\logs\agent-express.log:"; $errs | ForEach-Object { Info "        $_" } }
     }
     Write-Host ''
     if ($fails) { Write-Host "  $fails problem(s) found; the fixes are listed above." -ForegroundColor Yellow } else { Write-Host '  Everything looks good.' -ForegroundColor Green }
@@ -1022,10 +1093,10 @@ function Invoke-Update {
         } else { Warn 'git pull --ff-only did not succeed (local changes?); trying the ZIP instead.' }
     }
     if (-not $pulled) {
-        $repo = if ($BakedRepo -notmatch '^\{\{') { $BakedRepo } else { $script:E.Repo }
+        $repo = Get-Repo $script:S.EDITION
         $zipUrl = "https://github.com/$repo/archive/refs/heads/main.zip"
         Change "download $zipUrl over $root (your settings and workspace are not in it)" {
-            $tmp = Join-Path ([IO.Path]::GetTempPath()) ("hearth-" + [guid]::NewGuid().ToString('N'))
+            $tmp = Join-Path ([IO.Path]::GetTempPath()) ("agent-express-" + [guid]::NewGuid().ToString('N'))
             try {
                 Invoke-WebRequest -UseBasicParsing -Uri $zipUrl -OutFile "$tmp.zip"
                 Expand-Archive -Path "$tmp.zip" -DestinationPath $tmp -Force
@@ -1048,8 +1119,9 @@ function Invoke-Update {
 function Invoke-Uninstall {
     $name = $script:E.Name
     Step "Uninstalling $name from this PC"
-    Stop-Hearth
+    Stop-App
     if (Get-Task) { Change "remove the '$($script:E.Task)' logon task" { Unregister-ScheduledTask -TaskName $script:E.Task -Confirm:$false; Ok 'logon task removed' } | Out-Null }
+    Remove-OldTask
     Remove-Shortcuts
     if ($script:HasSettings) { Remove-Serve }
     Write-Host ''
@@ -1062,56 +1134,58 @@ function Invoke-Uninstall {
 
 # ------------------------------------------------------------------ main
 function Invoke-Main {
-    $script:Dry = $DryRun -or (Test-Truthy $env:HEARTH_DRY_RUN)
-    $script:Unattended = $Yes -or (Test-Truthy $env:HEARTH_YES)
+    $script:Dry = $DryRun -or (Test-Truthy (Get-Env 'DRY_RUN'))
+    $script:Unattended = $Yes -or (Test-Truthy (Get-Env 'YES'))
     if ($script:Dry) { Write-Host '  DRY RUN: checking only, nothing will be changed.' -ForegroundColor Magenta }
 
     $root = $null
     if ($Repo) { $root = (Resolve-Path -LiteralPath $Repo).Path }
     elseif ($ScriptPath) { $root = Split-Path -Parent $ScriptPath }
     if (-not (Test-Checkout $root)) {
-        if ($Action -ne 'install') { Die "This isn't inside a copy of Hearth ($root)." 'Run it from the folder you installed Hearth into.' }
+        if ($Action -ne 'install') { Die "This isn't inside a copy of Agent Express ($root)." 'Run it from the folder you installed the app into.' }
         return (Invoke-Bootstrap)
     }
     $script:Root = $root
     Update-SessionPath
 
+    Move-OldState $root
     $saved = Read-Settings $root
     $script:HasSettings = $saved.Count -gt 0
     $ed = $Edition
-    if (-not $ed) { $ed = $env:HEARTH_EDITION }
+    if (-not $ed) { $ed = Get-Env 'EDITION' }
     if (-not $ed) { $ed = $saved.EDITION }
     if (-not $ed) { $ed = Get-DetectedEdition $root }
-    if (-not $Editions.ContainsKey($ed)) { Die "-Edition is hearth or hq, not $ed" }
+    $ed = Resolve-Edition $ed
+    if (-not $Editions.ContainsKey($ed)) { Die "-Edition is express or fun, not $ed" }
     $script:E = $Editions[$ed]
 
     $S = @{}
     foreach ($k in $SettingsKeys) { $S[$k] = $saved[$k] }
     $S.EDITION = $ed
     $p = $Port
-    if (-not $p -and $env:HEARTH_PORT) { $p = [int]$env:HEARTH_PORT }
+    if (-not $p -and (Get-Env 'PORT')) { $p = [int](Get-Env 'PORT') }
     if (-not $p -and $saved.PORT) { $p = [int]$saved.PORT }
     if (-not $p) { $p = $script:E.Port }
     if ($p -lt 1 -or $p -gt 65535) { Die "-Port must be 1-65535, not $p" }
     $S.PORT = "$p"
     $ws = $Workspace
-    if (-not $ws) { $ws = $env:HEARTH_WORKSPACE }
+    if (-not $ws) { $ws = Get-Env 'WORKSPACE' }
     if (-not $ws) { $ws = $saved.WORKSPACE }
     if (-not $ws) { $ws = Join-Path $env:USERPROFILE $script:E.Workspace }
     $S.WORKSPACE = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ws).TrimEnd('\')
-    $script:NoTs = $NoTailscale -or (Test-Truthy $env:HEARTH_NO_TAILSCALE) -or ($saved.TAILSCALE -eq '0' -and $Action -ne 'install')
+    $script:NoTs = $NoTailscale -or (Test-Truthy (Get-Env 'NO_TAILSCALE')) -or ($saved.TAILSCALE -eq '0' -and $Action -ne 'install')
     $S.TAILSCALE = if ($script:NoTs) { '0' } else { '1' }
     $script:S = $S
 
     switch ($Action) {
         'start' {
-            if (-not $script:HasSettings) { Die 'Hearth is not installed yet.' 'Double-click install.bat first.' }
-            $ok = Start-Hearth
+            if (-not $script:HasSettings) { Die "$($script:E.Name) is not installed yet." 'Double-click install.bat first.' }
+            $ok = Start-App
             if ($ok -and $Open -and -not $script:Dry) { Start-Process "http://localhost:$($S.PORT)/" }
             return [int](-not $ok)
         }
-        'stop' { Stop-Hearth; return 0 }
-        'restart' { Stop-Hearth; return [int](-not (Start-Hearth)) }
+        'stop' { Stop-App; return 0 }
+        'restart' { Stop-App; return [int](-not (Start-App)) }
         'status' {
             $up = Test-Health ([int]$S.PORT)
             Write-Host "  $($script:E.Name): $(if ($up) { 'running' } else { 'not running' }) on port $($S.PORT); workspace $($S.WORKSPACE)"
@@ -1121,10 +1195,10 @@ function Invoke-Main {
         'update' { return (Invoke-Update) }
         'uninstall' { return (Invoke-Uninstall) }
         'password' {
-            if (-not $script:HasSettings) { Die 'Hearth is not installed yet.' 'Double-click install.bat first.' }
+            if (-not $script:HasSettings) { Die "$($script:E.Name) is not installed yet." 'Double-click install.bat first.' }
             $running = Test-Health ([int]$S.PORT)
             Ensure-Password -Reset
-            if ($running -and $script:PasswordChanged) { Info 'Restarting so the new password takes effect...'; Stop-Hearth -Quiet; Start-Hearth | Out-Null }
+            if ($running -and $script:PasswordChanged) { Info 'Restarting so the new password takes effect...'; Stop-App -Quiet; Start-App | Out-Null }
             if ($script:ShowPassword) { Write-Host "`n  Your new sign-in password: $($script:ShowPassword)" -ForegroundColor Yellow }
             return 0
         }
@@ -1152,7 +1226,7 @@ function Invoke-Main {
     Step 'Installing the app'
     $port = [int]$S.PORT
     $owner = Get-PortOwner $port
-    if ($owner -and -not (Get-HearthProcesses).Count) {
+    if ($owner -and -not (Get-AppProcesses).Count) {
         Die "Port $port is already in use by $($owner.ProcessName) (pid $($owner.Id))." "Close it, or choose another port: install.bat -Port $($port + 1)"
     }
     Build-App
@@ -1171,8 +1245,8 @@ function Invoke-Main {
 
     if (-not $NoStart) {
         Step "Starting $($script:E.Name)"
-        if ($script:PasswordChanged -or $script:Rebuilt) { Stop-Hearth -Quiet }
-        $started = Start-Hearth
+        if ($script:PasswordChanged -or $script:Rebuilt) { Stop-App -Quiet }
+        $started = Start-App
         if (-not $started -and -not $script:Dry) { Die "$($script:E.Name) did not start." 'Run doctor.bat to see why.' }
     } else { Info 'Not starting it (-NoStart). Use start.bat when you are ready.' }
 
@@ -1188,7 +1262,7 @@ function Invoke-Main {
 $code = 1
 try { $code = Invoke-Main }
 catch {
-    if ("$($_.Exception.Message)" -ne 'HEARTH_STOPPED') {
+    if ("$($_.Exception.Message)" -ne 'AGENT_EXPRESS_STOPPED') {
         Write-Host ''
         Write-Host "  Something went wrong: $($_.Exception.Message)" -ForegroundColor Red
         Write-Host "  at $($_.InvocationInfo.PositionMessage)" -ForegroundColor DarkGray

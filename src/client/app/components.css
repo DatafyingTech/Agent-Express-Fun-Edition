@@ -1,5 +1,5 @@
 /*
- * Hearth components, "Evening Glass" (docs/app/REDESIGN.md §1; structure: docs/app/DESIGN.md §7).
+ * Agent Express components (the app, /app), "Evening Glass" (docs/app/REDESIGN.md §1; structure: docs/app/DESIGN.md §7).
  * Every screen is built from these; screen CSS only arranges them. Tokens only (tokens.css): a value
  * that isn't a token is a color-mix() over tokens. Class names are DESIGN.md's, plus a few new ones
  * (.a-glass, .a-pills, .a-action, .a-meter) that ui.ts builds.
@@ -1690,7 +1690,7 @@ body.app .a-meter[data-level="near"] .a-meter__fill { background: var(--a-honey)
 body.app .a-meter[data-level="over"] .a-meter__fill { background: var(--a-accent); box-shadow: 0 0 10px color-mix(in srgb, var(--a-accent) 50%, transparent); }
 
 /* =============================================================================================
- * "Behind the scenes": the office's own terminal window (ui/terminal.ts), dressed in Hearth's
+ * "Behind the scenes": the office's own terminal window (ui/terminal.ts), dressed in the app's
  * colors. It brings its own markup (.backdrop > .modal.term); only the frame is restyled here.
  * =========================================================================================== */
 body.app #modal-root .backdrop {

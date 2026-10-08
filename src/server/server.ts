@@ -106,7 +106,7 @@ const TYPING_GAP_MS = 500;
 function findPublicDir(): string {
   const here = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [path.resolve(here, '../../public'), path.resolve(here, '../../dist/public')];
-  // login.html, not index.html: the Hearth edition is built without the 3D office's page.
+  // login.html, not index.html: Agent Express is built without the 3D office's page.
   for (const c of candidates) if (existsSync(path.join(c, 'login.html'))) return c;
   throw new Error(`Client bundle not found (looked in ${candidates.join(', ')}). Run \`npm run build\`.`);
 }
@@ -184,7 +184,7 @@ const SEARCH_TERMINAL_HITS = 25;
 
 export async function startServer(cfg: Config) {
   const publicDir = findPublicDir();
-  // Told it's the 3D office but built without it (HEARTH_EDITION=hq on a Hearth checkout): be the app.
+  // Told it's the 3D office but built without it (AGENT_EXPRESS_EDITION=fun on an Agent Express checkout): be the app.
   if (edition.has3d && !existsSync(path.join(publicDir, 'index.html'))) setEdition(edition.id, { has3d: false, home: '/app' });
   const homePage = () => path.join(publicDir, edition.has3d ? 'index.html' : 'app.html');
   const accounts = new Accounts(cfg.dataDir);
@@ -894,7 +894,7 @@ export async function startServer(cfg: Config) {
       if (p === '/' || p === '/index.html') return serveFile(res, homePage(), false);
       // The team on a phone (phone.ts); signed in like the office itself.
       if (p === '/phone' || p === '/phone.html') return serveFile(res, path.join(publicDir, 'phone.html'), false);
-      // Hearth: the calm, non-3D app over the same office (src/client/app/).
+      // Agent Express: the calm, non-3D app over the same office (src/client/app/).
       if (p === '/app' || p === '/app/' || p === '/app.html') return serveFile(res, path.join(publicDir, 'app.html'), false);
       const file = publicFile(p);
       if (file) return serveFile(res, file, false);
@@ -1314,7 +1314,7 @@ export async function startServer(cfg: Config) {
         const model = msg.model === undefined ? undefined : str(msg.model, OPEN_CODE_MODEL_MAX + 1);
         const effort = isAgentEffort(msg.effort) ? msg.effort : undefined;
         const role = kind === 'agent' ? str(msg.role, 32) || undefined : undefined;
-        // ---- Hearth (the app): a general helper (no role) can go by the job it was given. Additive. ----
+        // ---- The app (Agent Express): a general helper (no role) can go by the job it was given. Additive. ----
         const label = kind === 'agent' && !role ? str(msg.label, 64) || undefined : undefined;
         const r = floor.workers.spawn(str(msg.deskId, 32), who, str(msg.prompt, 20000) || undefined, msg.worktree === true, kind, msg.provider, model, effort, undefined, role, false, label);
         const issue = kind === 'agent' ? issueNumber(msg.issue) : undefined;
@@ -1600,7 +1600,7 @@ export async function startServer(cfg: Config) {
           title: str(msg.title, 200) || undefined,
           output: str(msg.output, 300) || undefined,
           roles: Array.isArray(msg.roles) ? msg.roles.slice(0, 16).map((r) => str(r, 80)) : [],
-          // [Hearth v2, agent B] Who sits in each chair. The clients have always sent it, but it was
+          // [App v2, agent B] Who sits in each chair. The clients have always sent it, but it was
           // never passed on, so every chair got a general helper; meetings.start checks each id against the roster.
           members: Array.isArray(msg.members) ? msg.members.slice(0, 16).map((m) => str(m, 64)) : undefined,
           attachments: Array.isArray(msg.attachments) ? msg.attachments.slice(0, 12).map((a) => str(a, 1024)) : undefined,

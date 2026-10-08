@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Hearth deliberately runs on your own computer and sends nothing anywhere except what
+        Agent Express deliberately runs on your own computer and sends nothing anywhere except what
         Claude Code itself sends to Anthropic. Requests that keep it that way (no cloud services of
         ours, no telemetry, no heavyweight new dependencies) are the easiest to say yes to.
 
@@ -46,7 +46,7 @@ body:
         - Tasks, GitHub, changes and pull requests
         - The phone (layout, Home Screen app, Tailscale)
         - Accounts and inviting people
-        - The 3D office (Hearth HQ)
+        - The 3D office (the Fun Edition)
         - Install, update, doctor
         - Documentation
         - Something else

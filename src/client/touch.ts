@@ -54,7 +54,7 @@ export function mountTouchControls(root: HTMLElement, hooks: TouchHooks) {
     {
       id: 'team',
       label: '📱',
-      what: 'Switch to Hearth, the app view',
+      what: 'Switch to Agent Express, the app view',
       run: () => {
         try {
           localStorage.removeItem('agent-office.3d');

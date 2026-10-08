@@ -1,13 +1,13 @@
 <div align="center">
 
-# Hearth HQ
+# Agent Express (Fun Edition)
 
 **Your team of Claude Code agents, in a 3D office you can walk into.**
 
 Sit a Bookkeeper at a desk and watch her terminal on the laptop in front of her. Call three
 teammates into the glass meeting room and talk it through around the table. Answer the one who's
 jumping up and down because she needs you. It all runs on your own computer, on your own Claude plan,
-and on your phone it's the calm [Hearth](https://github.com/DatafyingTech/Hearth) app instead.
+and on your phone it's the calm [Agent Express](https://github.com/DatafyingTech/Agent-Express) app instead.
 
 **Want it?** [Install in one line](#install). Your phone is [three taps after that](#on-your-phone).
 
@@ -23,10 +23,10 @@ and on your phone it's the calm [Hearth](https://github.com/DatafyingTech/Hearth
 
 ## What it does
 
-![Hearth HQ: teammates at their desks, then a conversation in the meeting room](docs/images/demo.gif)
+![Agent Express (Fun Edition): teammates at their desks, then a conversation in the meeting room](docs/images/demo.gif)
 
 *Nothing here is staged. These are real Claude Code agents in a brand-new workspace, recorded from a
-real Hearth HQ build in one take. The three at their desks had just finished real first tasks; the
+real Agent Express (Fun Edition) build in one take. The three at their desks had just finished real first tasks; the
 three in the meeting room wrote every word you see, and the memory panel is what Haiku actually kept.
 The honest footnotes: every teammate ran on Haiku instead of the model in their brief, to keep the
 recording cheap; the camera moves are scripted; and the waits while they think are sped up (up to
@@ -48,7 +48,7 @@ record.
 ![The meeting window: the conversation, who's at the table, and What the table knows](docs/images/meeting-window.png)
 
 On your phone, the same team, the same chats and the same meeting are in the
-[Hearth](https://github.com/DatafyingTech/Hearth) app, which Hearth HQ includes. Open the address on a
+[Agent Express](https://github.com/DatafyingTech/Agent-Express) app, which Agent Express (Fun Edition) includes. Open the address on a
 phone and that's what you get.
 
 ### Why a 3D office?
@@ -57,16 +57,16 @@ Because a team is easier to run when you can see it. A list of terminals tells y
 you read each one. A room tells you at a glance who is busy, who is stuck and who is done, and it
 makes checking in on six agents something you actually want to do.
 
-|  | Hearth HQ | Hearth | A row of terminal tabs |
+|  | Agent Express (Fun Edition) | Agent Express | A row of terminal tabs |
 |---|---|---|---|
 | **See the whole team at once** | Yes: desks, animations, status lights | A list with status words | Click through each tab |
-| **On your phone** | Gives you the Hearth app | Built for it | No |
+| **On your phone** | Gives you the Agent Express app | Built for it | No |
 | **Meetings** | Around a real table, with the memory on the wall | A conversation screen | Script it yourself |
 | **Live terminals** | On each laptop; press E to open, anyone can type | Behind each chat, with a key bar | Yes |
 | **Bring people in** | Walk around together, voice chat, screen share on the lounge TV | Accounts and invites | Screen-share your terminal |
 | **Runs on** | Your computer, your Claude plan | Your computer, your Claude plan | Your computer, your Claude plan |
 
-If you only want the phone app, install [Hearth](https://github.com/DatafyingTech/Hearth) instead.
+If you only want the phone app, install [Agent Express](https://github.com/DatafyingTech/Agent-Express) instead.
 It's the same team, without the building.
 
 ---
@@ -127,10 +127,10 @@ whichever are missing. Your computer has to be on (and awake) for your teammates
 Open **PowerShell** (press Start, type `powershell`, press Enter) and paste:
 
 ```powershell
-irm https://raw.githubusercontent.com/DatafyingTech/Hearth-HQ/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/DatafyingTech/Agent-Express-Fun-Edition/main/install.ps1 | iex
 ```
 
-Or [download the ZIP](https://github.com/DatafyingTech/Hearth-HQ/archive/refs/heads/main.zip),
+Or [download the ZIP](https://github.com/DatafyingTech/Agent-Express-Fun-Edition/archive/refs/heads/main.zip),
 right-click it, choose **Extract All**, open the folder and double-click **`install.bat`**.
 
 If Windows shows **"Windows protected your PC"**, that is SmartScreen reacting to any script from
@@ -139,7 +139,7 @@ the internet: click **More info**, then **Run anyway**.
 ### macOS and Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/DatafyingTech/Hearth-HQ/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/DatafyingTech/Agent-Express-Fun-Edition/main/install.sh | bash
 ```
 
 ### What the installer does
@@ -150,19 +150,19 @@ Every step is skipped when it is already done, so running it again is always saf
    missing (`winget` on Windows, Homebrew on macOS, your package manager on Linux). It asks first.
 2. **Checks that Claude Code is signed in**, and offers to sign you in.
 3. **Installs and builds the app** (`npm ci`, `npm run build`).
-4. **Creates your workspace**, `~/HearthHQ` (`%USERPROFILE%\HearthHQ` on Windows), with a starter
+4. **Creates your workspace**, `~/AgentExpressFun` (`%USERPROFILE%\AgentExpressFun` on Windows), with a starter
    `CLAUDE.md`, a `memory/` folder and a `TODO.md`, as a git repository: that's the ground floor.
    It tells Claude Code to trust that folder (after backing up `~/.claude.json`), so the first
    teammate you hire doesn't stop at Claude Code's "Do you trust this folder?" question.
 5. **Sets your sign-in password**: your own, or a generated one it shows you once. Only a hash is
    stored.
-6. **Offers to start Hearth HQ when you sign in**, and adds Start Menu and desktop shortcuts on
+6. **Offers to start Agent Express (Fun Edition) when you sign in**, and adds Start Menu and desktop shortcuts on
    Windows.
 7. **Starts it and shares it on your tailnet** with `tailscale serve`. The server itself only listens
    on `127.0.0.1`.
 8. **Prints the addresses**: `http://localhost:4610` on this computer, and one for your phone.
 
-Hearth HQ uses port **4610** by default, so it can run next to Hearth (4600) on the same computer.
+Agent Express (Fun Edition) uses port **4610** by default, so it can run next to Agent Express (4600) on the same computer.
 
 <details>
 <summary><b>Options</b></summary>
@@ -170,8 +170,8 @@ Hearth HQ uses port **4610** by default, so it can run next to Hearth (4600) on 
 | Windows | macOS / Linux | What it does |
 |---|---|---|
 | `-Port <n>` | `--port <n>` | The port on this computer (default 4610) |
-| `-Workspace <dir>` | `--workspace <dir>` | Your workspace folder (default `~/HearthHQ`) |
-| `-InstallDir <dir>` | `--install-dir <dir>` | Where the one-line install puts the app (default `%LOCALAPPDATA%\Programs\Hearth-HQ` / `~/.local/share/hearth-hq`) |
+| `-Workspace <dir>` | `--workspace <dir>` | Your workspace folder (default `~/AgentExpressFun`) |
+| `-InstallDir <dir>` | `--install-dir <dir>` | Where the one-line install puts the app (default `%LOCALAPPDATA%\Programs\Agent-Express-Fun-Edition` / `~/.local/share/agent-express-fun`) |
 | `-NoTailscale` | `--no-tailscale` | This computer only |
 | `-NoAutostart` / `-Autostart` | `--no-autostart` / `--autostart` | Don't (or do) start it when you sign in, without asking |
 | `-NoShortcut`, `-NoDesktopShortcut` | | No shortcuts, or Start Menu only |
@@ -183,8 +183,8 @@ Hearth HQ uses port **4610** by default, so it can run next to Hearth (4600) on 
 
 From a downloaded copy: `install.bat -Port 4710` or `./install.sh --port 4710`. Through the
 one-liner on macOS and Linux: `curl -fsSL …/install.sh | bash -s -- --port 4710`. The Windows
-one-liner reads `HEARTH_PORT`, `HEARTH_WORKSPACE`, `HEARTH_INSTALL_DIR`, `HEARTH_YES=1`,
-`HEARTH_DRY_RUN=1`, `HEARTH_NO_TAILSCALE=1`, `HEARTH_NO_AUTOSTART=1` and `HEARTH_PASSWORD` instead.
+one-liner reads `AGENT_EXPRESS_PORT`, `AGENT_EXPRESS_WORKSPACE`, `AGENT_EXPRESS_INSTALL_DIR`, `AGENT_EXPRESS_YES=1`,
+`AGENT_EXPRESS_DRY_RUN=1`, `AGENT_EXPRESS_NO_TAILSCALE=1`, `AGENT_EXPRESS_NO_AUTOSTART=1` and `AGENT_EXPRESS_PASSWORD` instead.
 </details>
 
 In the app's folder you'll find `start`, `stop`, `doctor`, `update`, `password` and `uninstall`
@@ -195,7 +195,7 @@ prints a fix for each problem.
 
 ## First run
 
-Open **http://localhost:4610** (or the **Hearth HQ** shortcut) and sign in. The first time, you pick
+Open **http://localhost:4610** (or the **Agent Express (Fun Edition)** shortcut) and sign in. The first time, you pick
 your character: skin, hair and shirt.
 
 1. **Look around.** **W A S D** to walk, drag the mouse to turn, **Space** to jump. The desks are in
@@ -204,7 +204,7 @@ your character: skin, hair and shirt.
 2. **Hire someone.** Walk up to an empty desk and press **E**. Choose a teammate from the roster
    (say the **Chief of Staff**), give them a first task if you like, and they sit down and open
    their laptop. Or **☰ → Hire a crew** to fill several desks at once.
-3. **Talk to them.** Press **E** at their desk to open the terminal and type, or open the Hearth
+3. **Talk to them.** Press **E** at their desk to open the terminal and type, or open the Agent Express
    app at `/app` for a chat view.
 4. **Call a meeting.** Walk into the meeting room and press **E** at the table. Choose **A
    conversation**, pick who's coming, and ask them something real. Watch them walk in and sit down.
@@ -214,8 +214,8 @@ your character: skin, hair and shirt.
 Before all that, open `CLAUDE.md` in your workspace and tell the team about yourself. Every
 teammate reads it before they start.
 
-The [tutorial](docs/TUTORIAL.md) walks through the Hearth app with screenshots, start to finish;
-everything in it works in Hearth HQ too.
+The [tutorial](docs/TUTORIAL.md) walks through the Agent Express app with screenshots, start to finish;
+everything in it works in Agent Express (Fun Edition) too.
 
 ### Controls
 
@@ -241,7 +241,7 @@ everything in it works in Hearth HQ too.
 
 ## On your phone
 
-Open the phone address the installer printed and you get the **Hearth** app, built for one hand:
+Open the phone address the installer printed and you get the **Agent Express** app, built for one hand:
 your team, their chats, conversations, notes, tasks and reports. Phones open it by themselves; on a
 computer it lives at `/app`.
 
@@ -274,7 +274,7 @@ their character, in chat and on every terminal they type into.
 
 ## What it costs
 
-**Hearth HQ is free.** Your teammates run on **your own Claude plan** through the Claude Code CLI,
+**Agent Express (Fun Edition) is free.** Your teammates run on **your own Claude plan** through the Claude Code CLI,
 just as if you had opened that many Claude Code sessions yourself.
 
 - **Each teammate** uses your plan while they work, on the model in their brief (Opus, Sonnet or
@@ -293,7 +293,7 @@ of API-equivalent usage. The same three on their usual Opus and Sonnet would cos
 ## Privacy and your data
 
 **Everything runs on your computer.** Chats, terminals, memory, reports, meeting records and
-settings live in your workspace and the app's folder, as plain files you own. No Hearth server, no
+settings live in your workspace and the app's folder, as plain files you own. No Agent Express server, no
 account with us, no telemetry, no analytics.
 
 | What | To where | When |
@@ -301,7 +301,7 @@ account with us, no telemetry, no analytics.
 | **Claude Code** | Anthropic | Whenever a teammate works, and for the Haiku memory and task cards |
 | **Your phone and anyone you invite** | Your computer, through Tailscale | When they use it. Encrypted end to end by WireGuard |
 | **Voice and screen sharing** | Directly between the browsers in the office (WebRTC) | Only when you turn them on |
-| **Fonts** | Google Fonts | When the Hearth app's page loads |
+| **Fonts** | Google Fonts | When the Agent Express app's page loads |
 | **GitHub** | github.com, through the GitHub CLI | Only if you use the boards or add a floor from GitHub, and to install or update |
 | **Pictures, radio, weather** | The link you paste; open-meteo.com | Only if you hang a picture from the web, play an internet radio link, or start it with `--city` |
 
@@ -315,9 +315,9 @@ everyone still has to sign in.
 **Update:** double-click `update.bat` (or `./update.sh`). It fetches the newest version, rebuilds and
 restarts, keeping your workspace, password, settings and `roster.local.ts`.
 
-**Uninstall:** double-click `uninstall.bat` (or `./uninstall.sh`): it stops Hearth HQ and removes
+**Uninstall:** double-click `uninstall.bat` (or `./uninstall.sh`): it stops Agent Express (Fun Edition) and removes
 the autostart, shortcuts and Tailscale share. Then delete the app's folder. Your workspace,
-`~/HearthHQ`, is kept; delete it too if you don't want it.
+`~/AgentExpressFun`, is kept; delete it too if you don't want it.
 
 ---
 
@@ -331,7 +331,7 @@ Tailscale, and prints a fix for each problem. `doctor.bat -Force` applies the fi
 <summary><b>A new teammate jumps up and down straight away</b></summary>
 
 It's waiting on Claude Code's "Do you trust this folder?" question. Press **E** at the desk and
-answer yes in the terminal. Stop Hearth HQ and run `doctor.bat -Force` to mark the workspace trusted
+answer yes in the terminal. Stop Agent Express (Fun Edition) and run `doctor.bat -Force` to mark the workspace trusted
 for good. A floor you add from GitHub is a new folder, so its first teammate may ask once too.
 </details>
 
@@ -340,7 +340,7 @@ for good. A floor you add from GitHub is a new folder, so its first teammate may
 
 The 3D office needs WebGL. Use a current Chrome, Edge, Firefox or Safari, make sure hardware
 acceleration is on in the browser's settings, and close other heavy tabs. On a phone, use the
-Hearth app, which is what phones get anyway.
+Agent Express app, which is what phones get anyway.
 </details>
 
 <details>
@@ -358,7 +358,7 @@ else works.
 Run the installer again with `-Port 4710` (or `--port 4710`). It moves the Tailscale share too.
 </details>
 
-Still stuck? [Open an issue](https://github.com/DatafyingTech/Hearth-HQ/issues) with your doctor
+Still stuck? [Open an issue](https://github.com/DatafyingTech/Agent-Express-Fun-Edition/issues) with your doctor
 output (check it for anything private first).
 
 ---
@@ -366,11 +366,11 @@ output (check it for anything private first).
 ## FAQ
 
 <details>
-<summary><b>What's the difference between Hearth and Hearth HQ?</b></summary>
+<summary><b>What's the difference between Agent Express and Agent Express (Fun Edition)?</b></summary>
 
-The same team, server and app. Hearth HQ adds the 3D office and opens it at `/`; Hearth opens the
-phone-first app everywhere. Pick HQ if you like seeing your team, or if several people will work
-in the office together; pick Hearth for a quiet app on your phone. They can run side by side.
+The same team, server and app. Agent Express (Fun Edition) adds the 3D office and opens it at `/`; Agent Express opens the
+phone-first app everywhere. Pick the Fun Edition if you like seeing your team, or if several people will work
+in the office together; pick Agent Express for a quiet app on your phone. They can run side by side.
 </details>
 
 <details>
@@ -384,7 +384,7 @@ No. It uses whatever Claude Code is signed in with: a Pro or Max plan, or an API
 
 Only with tools and permissions you give Claude Code. Every brief tells them to draft anything
 outward-facing or hard to undo and wait for your yes, and Claude Code's own permission prompts still
-apply (they show up on the laptop, and in the Hearth app with quick answers).
+apply (they show up on the laptop, and in the Agent Express app with quick answers).
 </details>
 
 <details>
@@ -404,10 +404,10 @@ and report privately.
 
 ## Credits
 
-Hearth HQ is built on **[agent-office](https://github.com/AgentSystemLabs/agent-office)** by
+Agent Express (Fun Edition) is built on **[agent-office](https://github.com/AgentSystemLabs/agent-office)** by
 AgentSystemLabs (MIT): the cartoon 3D multiplayer office, the shared terminals, the boards, the
-gong, the elevator and the meeting room are its work. Hearth HQ adds the roster and crews, the
-conversation meetings with a shared memory kept by Haiku, the Hearth phone app, and the one-line
+gong, the elevator and the meeting room are its work. Agent Express (Fun Edition) adds the roster and crews, the
+conversation meetings with a shared memory kept by Haiku, the Agent Express phone app, and the one-line
 installers with Tailscale. Thank you.
 
 Also built with [Claude Code](https://docs.claude.com/en/docs/claude-code),
@@ -415,7 +415,7 @@ Also built with [Claude Code](https://docs.claude.com/en/docs/claude-code),
 [node-pty](https://github.com/microsoft/node-pty), [Excalidraw](https://excalidraw.com),
 [Tailscale](https://tailscale.com), [Vite](https://vite.dev) and [Lucide](https://lucide.dev).
 
-Hearth HQ is an independent project, not affiliated with, endorsed by or sponsored by Anthropic or
+Agent Express (Fun Edition) is an independent project, not affiliated with, endorsed by or sponsored by Anthropic or
 Tailscale. Claude and Claude Code are trademarks of Anthropic.
 
 ## License

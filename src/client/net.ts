@@ -55,7 +55,7 @@ export class Net {
       try {
         const res = await fetch('/api/whoami', { cache: 'no-store' });
         if (res.status === 401) {
-          // Hearth (/app) comes back to the same screen after signing in; the 3D office to itself.
+          // The app view (/app) comes back to the same screen after signing in; the 3D office to itself.
           location.href = location.pathname.startsWith('/app') ? '/login?next=' + encodeURIComponent('/app' + location.hash) : '/login';
           return;
         }

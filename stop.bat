@@ -1,5 +1,5 @@
 @echo off
-rem Stops Hearth and the agents it started. start.bat (or signing in again, with autostart on) brings it back.
+rem Stops Agent Express (Fun Edition) and the agents it started. start.bat (or signing in again, with autostart on) brings it back.
 cd /d "%~dp0"
 set "PS=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
 if not exist "%PS%" set "PS=powershell"

@@ -1,4 +1,4 @@
-// A conversation with one teammate (DESIGN.md §6.4, REDESIGN.md §3): the heart of Hearth. A glass
+// A conversation with one teammate (DESIGN.md §6.4, REDESIGN.md §3): the heart of Agent Express. A glass
 // header with who they are and how they're doing, her messages on the right in ember, theirs on the
 // left as rendered markdown with the tools they used as quiet chips, a working indicator that says
 // what they're up to, a "needs you" card that can answer a terminal prompt with one tap, and a glass
@@ -19,6 +19,7 @@ import { PERSONAL_DEPARTMENTS, TEAM_BY_ID } from '../../../shared/team';
 import { markdown } from '../../ui/markdown';
 import { attachNote, uploadImage } from '../../attach';
 import { icon } from '../icons';
+import { APP_NAME } from '../../../shared/edition';
 import {
   avatar,
   button,
@@ -68,14 +69,14 @@ interface Pending {
 }
 
 /** The office's own instructions for a group chat (see server/meetings.ts): never her words. */
-// Any edition's name (and the old one, in chats from before): "...in Hearth's meeting room".
+// Any edition's name (and the old ones, in chats from before): "...in Agent Express's meeting room".
 const GROUP_BRIEF = /\bin an? [^\n]{1,40}? meeting in [^\n]{1,40}?'s meeting room\b/;
 const GROUP_TOPIC = /What the meeting is about:\n([^\n]+)/;
 const GROUP_ROUND = /^Round (\d+) of (\d+), [^\n]{1,60}?\. /;
 
 /**
  * A message the office sent a teammate in her name (a group chat's brief or its next round), as the
- * quiet line Hearth shows instead; null for anything she actually said.
+ * quiet line the app shows instead; null for anything she actually said.
  */
 export function officeLine(m: Pick<ChatMessage, 'role' | 'text'>): string | null {
   if (m.role !== 'user') return null;
@@ -364,7 +365,7 @@ function mountChat(root: HTMLElement, ctx: AppContext, floor: string, workerId: 
     if (!w) return;
     name = w.name;
     nameEl.textContent = w.name;
-    document.title = `${w.name} · Hearth`;
+    document.title = `${w.name} · ${APP_NAME}`;
     const s = uiStatus(w);
     setAvatarStatus(whoAvatar, s);
     chatEl.style.setProperty('--a-who', w.color);

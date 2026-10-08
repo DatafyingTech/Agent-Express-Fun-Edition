@@ -1,5 +1,5 @@
 /*
- * Hearth's shell, "Evening Glass" (docs/app/REDESIGN.md §1; structure: docs/app/DESIGN.md §4, §7.18, §11).
+ * The app's shell (Agent Express, /app), "Evening Glass" (docs/app/REDESIGN.md §1; structure: docs/app/DESIGN.md §4, §7.18, §11).
  *   phone  (< 700)      a floating glass tab bar (Home · Chats · Create · Settings), screens push
  *   tablet (700–1023)   an 80px glass icon rail on the left
  *   desktop (≥ 1024)    a 264px glass sidebar that lists the spaces
@@ -182,7 +182,7 @@ body.app .a-boot {
 }
 
 /* ---------------------------------------------------------------------------------------------
- * Wordmark: "Hearth·" in Instrument Serif, the dot an ember that glows.
+ * Wordmark: "Agent Express·" in Instrument Serif, the dot an ember that glows.
  * ------------------------------------------------------------------------------------------- */
 body.app .a-wordmark {
   display: inline-flex;

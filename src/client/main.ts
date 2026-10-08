@@ -77,7 +77,7 @@ import { FrameGate, GRAPHICS, loadGraphics, singlePassGlass } from './graphics';
 import { openCrewHire } from './ui/crew';
 import { openReports } from './ui/reports';
 import { isTouchDevice, mountTouchControls } from './touch';
-import { edition } from '../shared/edition';
+import { APP_NAME, edition } from '../shared/edition';
 
 // ---- Renderer & scene ---------------------------------------------------------------------------
 const canvas = $('scene') as HTMLCanvasElement;
@@ -2691,10 +2691,10 @@ const hud = mountHud(
     {
       id: 'team-view',
       icon: '📱',
-      label: 'Hearth (app view)',
+      label: `${APP_NAME} (app view)`,
       section: 'Office',
       shown: () => isTouchDevice(),
-      title: () => 'Switch to Hearth: the calm app view of your team',
+      title: () => `Switch to ${APP_NAME}: the calm app view of your team`,
       run: () => {
         try {
           localStorage.removeItem('agent-office.3d');

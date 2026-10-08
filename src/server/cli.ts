@@ -46,9 +46,10 @@ function passwordLine() {
   if (!office.accounts.sharedPassword) return `off — everyone signs in with their own account (${commandLine('accounts')})`;
   if (!cfg.passwordGenerated) return '(from --password / AGENT_OFFICE_PASSWORD)';
   if (cfg.claimToken && !cfg.claimed) return 'shown exactly once to whoever opens the claim link (/claim?t=…)';
-  // The installers' runner (installer/hearth.mjs) sets HEARTH_EDITION, and their password scripts
-  // store only the hash, the same way a claimed password is kept.
-  if (process.env.HEARTH_EDITION && !cfg.password) return 'set by the installer (password.bat / password.sh)';
+  // The installers' runner (installer/agent-express.mjs) sets AGENT_EXPRESS_EDITION (HEARTH_EDITION
+  // before the rename), and their password scripts store only the hash, the same way a claimed
+  // password is kept.
+  if ((process.env.AGENT_EXPRESS_EDITION || process.env.HEARTH_EDITION) && !cfg.password) return 'set by the installer (password.bat / password.sh)';
   if (cfg.claimed || !cfg.password) return '(already claimed — never shown again; reset with --reset-password)';
   return cfg.password;
 }

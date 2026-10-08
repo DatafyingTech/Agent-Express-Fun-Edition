@@ -3,10 +3,11 @@ import { createReadStream, existsSync, readFileSync, readdirSync, statSync } fro
 import { join, resolve, sep } from 'node:path';
 import { DEFAULT_EDITION, EDITIONS, parseEdition } from './src/shared/edition.ts';
 
-// Which app this build is (src/shared/edition.ts): HEARTH_EDITION=hearth npm run build. A tree
-// without the 3D office's page (the Hearth repo) can only be built without it, whatever it's told.
+// Which app this build is (src/shared/edition.ts): AGENT_EXPRESS_EDITION=express npm run build
+// (HEARTH_EDITION, its first name, works too). A tree without the 3D office's page (the Agent Express
+// repo) can only be built without it, whatever it's told.
 const client = resolve(import.meta.dirname, 'src/client');
-const editionId = parseEdition(process.env.HEARTH_EDITION) ?? DEFAULT_EDITION;
+const editionId = parseEdition(process.env.AGENT_EXPRESS_EDITION || process.env.HEARTH_EDITION) ?? DEFAULT_EDITION;
 const edition = EDITIONS[editionId];
 const has3d = edition.has3d && existsSync(join(client, 'index.html'));
 
@@ -46,13 +47,13 @@ function excalidrawFonts(): Plugin {
 
 /**
  * The edition in the pages themselves: %EDITION_NAME% becomes the app's name, and a part wrapped in
- * <!--hearth-->...<!--/hearth--> or <!--office-->...<!--/office--> is kept only in that look (the
- * Hearth edition has Hearth's look; HQ and Agent Office keep the cartoon one). Runs before Vite
- * reads the page, so a stylesheet or script inside a dropped part is never bundled.
+ * <!--app-->...<!--/app--> or <!--office-->...<!--/office--> is kept only in that look (Agent Express
+ * has the app's look; the Fun Edition and Agent Office keep the cartoon one). Runs before Vite reads
+ * the page, so a stylesheet or script inside a dropped part is never bundled.
  */
 function editionPages(): Plugin {
-  const look = editionId === 'hearth' ? 'hearth' : 'office';
-  const drop = look === 'hearth' ? 'office' : 'hearth';
+  const look = editionId === 'express' ? 'app' : 'office';
+  const drop = look === 'app' ? 'office' : 'app';
   return {
     name: 'edition-pages',
     transformIndexHtml: {
@@ -74,7 +75,7 @@ export default defineConfig({
   plugins: [editionPages(), ...(has3d ? [excalidrawFonts()] : [])],
   define: {
     __EXCALIDRAW_ASSETS__: JSON.stringify(EXCALIDRAW_ASSETS),
-    __HEARTH_EDITION__: JSON.stringify(editionId),
+    __AGENT_EXPRESS_EDITION__: JSON.stringify(editionId),
   },
   build: {
     outDir: resolve(import.meta.dirname, 'dist/public'),

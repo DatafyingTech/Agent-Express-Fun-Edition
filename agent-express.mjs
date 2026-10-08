@@ -1,16 +1,22 @@
 #!/usr/bin/env node
-// Hearth's runner and small helpers, shared by install.ps1 (Windows) and install.sh (macOS, Linux).
+// Agent Express's runner and small helpers, shared by install.ps1 (Windows) and install.sh (macOS,
+// Linux), for both editions: Agent Express and Agent Express (Fun Edition).
 //
-//   node hearth.mjs [run]            start the office with the settings in .hearth/settings.env,
-//                                    logging to .hearth/logs/hearth.log (what the logon task,
-//                                    launchd and systemd run). --foreground logs to this console.
-//   node hearth.mjs set-password     read a password from stdin and make it the sign-in password
-//   node hearth.mjs password-status  print "set", "generated" or "none"
-//   node hearth.mjs health [port]    exit 0 when the office answers on 127.0.0.1:<port>
-//   node hearth.mjs check-login      read a password from stdin and try it against the running office
-//   node hearth.mjs trust-workspace [--check|--dry-run] [--workspace <dir>]  mark the workspace trusted in ~/.claude.json
-//   node hearth.mjs tailscale-info  print "<state>\t<dns name>\t<tailscale ip>" (HEARTH_TAILSCALE = the CLI)
-//   node hearth.mjs serve-target <port>  print what `tailscale serve` proxies <port> to, if anything
+//   node agent-express.mjs [run]            start the office with the settings in
+//                                           .agent-express/settings.env, logging to
+//                                           .agent-express/logs/agent-express.log (what the logon
+//                                           task, launchd and systemd run). --foreground logs to
+//                                           this console.
+//   node agent-express.mjs set-password     read a password from stdin and make it the sign-in password
+//   node agent-express.mjs password-status  print "set", "generated" or "none"
+//   node agent-express.mjs health [port]    exit 0 when the office answers on 127.0.0.1:<port>
+//   node agent-express.mjs check-login      read a password from stdin and try it against the running office
+//   node agent-express.mjs trust-workspace [--check|--dry-run] [--workspace <dir>]  mark the workspace trusted in ~/.claude.json
+//   node agent-express.mjs tailscale-info   print "<state>\t<dns name>\t<tailscale ip>" (AGENT_EXPRESS_TAILSCALE = the CLI)
+//   node agent-express.mjs serve-target <port>  print what `tailscale serve` proxies <port> to, if anything
+//
+// The apps were first called Hearth, so the HEARTH_* variables are still read when the
+// AGENT_EXPRESS_* ones aren't set. (The installers move an old install's .hearth/ folder.)
 //
 // It is a Node script, not a .cmd or .sh, so one file behaves the same on every OS: Node reads paths
 // with any letters in them correctly (cmd.exe reads a batch file in the console's code page and
@@ -26,14 +32,19 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const STATE = path.join(ROOT, '.hearth');
+const STATE = path.join(ROOT, '.agent-express');
 const SETTINGS = path.join(STATE, 'settings.env');
 const LOG_DIR = path.join(STATE, 'logs');
-const LOG = path.join(LOG_DIR, 'hearth.log');
+const LOG = path.join(LOG_DIR, 'agent-express.log');
 const LOG_MAX_BYTES = 10 * 1024 * 1024;
 const IS_WIN = process.platform === 'win32';
 
-/** .hearth/settings.env: KEY=value lines, written by the installers. Read here, never sourced. */
+/** AGENT_EXPRESS_<name> from the environment, or HEARTH_<name> (its name before the rename). */
+function envVar(name) {
+  return process.env[`AGENT_EXPRESS_${name}`] || process.env[`HEARTH_${name}`] || '';
+}
+
+/** .agent-express/settings.env: KEY=value lines, written by the installers. Read here, never sourced. */
 function readSettings() {
   const out = {};
   let text = '';
@@ -50,7 +61,7 @@ function readSettings() {
 }
 
 function die(msg, code = 1) {
-  console.error(`hearth: ${msg}`);
+  console.error(`agent-express: ${msg}`);
   process.exit(code);
 }
 
@@ -112,7 +123,7 @@ async function run(foreground) {
   // Started twice (the logon task and a shortcut): the second one has nothing to do. Exiting 0 keeps
   // the task from counting it as a crash.
   if ((await get(port, '/api/health')) === 200) {
-    console.log(`hearth: already running on port ${port}`);
+    console.log(`agent-express: already running on port ${port}`);
     return 0;
   }
 
@@ -121,7 +132,7 @@ async function run(foreground) {
   if (!IS_WIN) extra.push('/opt/homebrew/bin', '/usr/local/bin');
   const sep = IS_WIN ? ';' : ':';
   const pathKey = Object.keys(process.env).find((k) => k.toUpperCase() === 'PATH') ?? 'PATH';
-  const env = { ...process.env, [pathKey]: [...extra, process.env[pathKey] ?? ''].join(sep), HEARTH_EDITION: s.EDITION || 'hearth' };
+  const env = { ...process.env, [pathKey]: [...extra, process.env[pathKey] ?? ''].join(sep), AGENT_EXPRESS_EDITION: s.EDITION || 'express' };
   // The sign-in password lives as a hash in the office's config.json (set-password); an inherited
   // AGENT_OFFICE_PASSWORD would quietly override it.
   delete env.AGENT_OFFICE_PASSWORD;
@@ -157,7 +168,7 @@ async function run(foreground) {
   }
   return new Promise((resolve) => {
     child.on('error', (err) => {
-      console.error(`hearth: could not start node: ${err.message}`);
+      console.error(`agent-express: could not start node: ${err.message}`);
       resolve(1);
     });
     child.on('exit', (code, signal) => {
@@ -197,7 +208,7 @@ async function setPassword() {
   delete stored.password;
   stored.claimedAt = Date.now();
   writeFileSync(file, JSON.stringify(stored, null, 2), { mode: 0o600 });
-  console.log('hearth: password saved');
+  console.log('agent-express: password saved');
   return 0;
 }
 
@@ -233,15 +244,15 @@ async function checkLogin() {
 }
 
 /**
- * Claude Code's own settings file. CLAUDE_CONFIG_DIR moves it; HEARTH_CLAUDE_JSON points this script
- * at another copy (for testing the installer without touching the real one).
+ * Claude Code's own settings file. CLAUDE_CONFIG_DIR moves it; AGENT_EXPRESS_CLAUDE_JSON points this
+ * script at another copy (for testing the installer without touching the real one).
  */
 function claudeJsonPath() {
-  if (process.env.HEARTH_CLAUDE_JSON) return path.resolve(process.env.HEARTH_CLAUDE_JSON);
+  if (envVar('CLAUDE_JSON')) return path.resolve(envVar('CLAUDE_JSON'));
   return path.join(process.env.CLAUDE_CONFIG_DIR || os.homedir(), '.claude.json');
 }
 
-/** A folder the way Claude Code writes it in ~/.claude.json: C:/Users/me/Hearth on Windows. */
+/** A folder the way Claude Code writes it in ~/.claude.json: C:/Users/me/AgentExpress on Windows. */
 function claudeKey(dir) {
   const abs = path.resolve(dir);
   if (!IS_WIN) return abs;
@@ -304,7 +315,7 @@ async function trustWorkspace(flags) {
   // Claude Code saves this file while it runs; an office that's up has agents running in the
   // workspace, which could write their copy back over ours.
   if (s.PORT && (await get(Number(s.PORT), '/api/health')) === 200) {
-    console.log(`skipped: stop Hearth first (its agents use ${file}), then run this again`);
+    console.log(`skipped: stop the app first (its agents use ${file}), then run this again`);
     return 4;
   }
   // Read again right before writing, so the window for another Claude Code to save in between is tiny.
@@ -317,11 +328,11 @@ async function trustWorkspace(flags) {
     }
     if (existsSync(file)) {
       const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-      writeFileSync(`${file}.hearth-backup-${stamp}`, readFileSync(file), { mode: 0o600 });
+      writeFileSync(`${file}.agent-express-backup-${stamp}`, readFileSync(file), { mode: 0o600 });
     }
     if (!j.projects || typeof j.projects !== 'object') j.projects = {};
     j.projects[key] = { ...(j.projects[key] ?? { allowedTools: [] }), hasTrustDialogAccepted: true };
-    const tmp = `${file}.hearth-tmp-${process.pid}`;
+    const tmp = `${file}.agent-express-tmp-${process.pid}`;
     writeFileSync(tmp, JSON.stringify(j, null, 2), { mode: 0o600 });
     renameSync(tmp, file);
     await new Promise((r) => setTimeout(r, 1500));
@@ -339,7 +350,7 @@ async function trustWorkspace(flags) {
 }
 
 function tailscaleJson(args) {
-  const cli = process.env.HEARTH_TAILSCALE || 'tailscale';
+  const cli = envVar('TAILSCALE') || 'tailscale';
   try {
     return JSON.parse(execFileSync(cli, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 15000, windowsHide: true }));
   } catch {

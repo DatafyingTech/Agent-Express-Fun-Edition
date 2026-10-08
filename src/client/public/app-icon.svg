@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Hearth, "Evening Glass": a hairline house on obsidian, an ember burning in it, its glow on the walls. -->
+  <!-- The Agent Express app icon, "Evening Glass": a hairline house on obsidian, an ember burning in it, its glow on the walls. -->
   <defs>
     <radialGradient id="ground" cx="28%" cy="14%" r="95%">
       <stop offset="0" stop-color="#3B1B0D"/>
